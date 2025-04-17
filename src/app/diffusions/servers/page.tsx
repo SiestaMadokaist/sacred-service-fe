@@ -16,6 +16,7 @@ import { EC2Instance } from "../../../api/computes/samples";
 import { CheckpointSelector } from "./select-checkpoint";
 import { CheckpointDownloader, CheckpointUpdater } from "./checkpoint-fetcher";
 import { useTitle } from "../../../hooks/useTitle";
+import { LoraManager } from "../../../components/LoraManager";
 
 interface ICheckpoint {
   region: string;
@@ -202,11 +203,18 @@ const ComputeManager: React.FC = () => {
           )}
         </>
       )}
-      <CheckpointDownloader api={computeAPI} />
-      <CheckpointUpdater
-        checkpoints={checkpoints}
-        api={computeAPI}
-      />
+      <div className="d-flex flex-row w-100">
+        <div className="w-45">
+          <CheckpointDownloader api={computeAPI} />
+          <CheckpointUpdater
+            checkpoints={checkpoints}
+            api={computeAPI}
+          />
+        </div>
+        <div className="w-45 ml-10">
+          <LoraManager computeAPI={computeAPI} />
+        </div>
+      </div>
       {toastElement}
     </Container>
   );

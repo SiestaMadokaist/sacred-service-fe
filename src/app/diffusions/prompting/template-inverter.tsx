@@ -34,20 +34,14 @@ export const TemplateInverter = (): JSX.Element => {
   }
   const fontColor = flash ? '#07bdff' : 'white';
   return (
-    <div className="d-flex flex-column w-100 h-100">
-      <div className="color-white margin-auto auto">Inverter</div>
-      <Row className="mt-2 d-flex flex-wrap w-100">
-        <Col sm="1" xs="1" className="justify-content-center align-items-center color-white">0</Col>
-        <Col onClick={copy}>
-          <pre style={{ fontSize: '0.875em', cursor: 'pointer', color: fontColor, whiteSpace: 'pre-wrap', wordWrap: 'break-word' }} className="w-100 mt-2">
-            {template}
-          </pre>
-        </Col>
-        <Col>        
-          <Input style={{ minHeight: '10em', fontFamily: 'monospace', fontSize: '0.875rem', }} className="h-100" type="textarea" value={inverted} onChange={(e) => setInverted(e.target.value)} />
-        </Col>
-      </Row>
-      <div style={{ border: '1px white dotted'}} className="bg-white mt-2" />
+    <div className="d-flex flex-column w-100">
+      <Input style={{ minHeight: '5em', fontFamily: 'monospace', fontSize: '0.875rem', }} className="w-100" type="textarea" value={inverted} onChange={(e) => setInverted(e.target.value)} />
+      <div style={{ border: '1px white dotted' }} className="bg-white mt-2" />
+      <div onClick={copy}>
+        <pre style={{ fontSize: '0.875em', cursor: 'pointer', color: fontColor, whiteSpace: 'pre-wrap', wordWrap: 'break-word' }} className="w-100 mt-2">
+          {template}
+        </pre>
+      </div>
     </div>
     )
 

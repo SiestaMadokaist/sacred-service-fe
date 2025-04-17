@@ -67,7 +67,7 @@ export function PictureMetadata(props: IMetadata): JSX.Element {
           <pre className="color-white">{meta.checkpoint}</pre>
           {flash ? <IconCheck size={18} className="color-white bg-transparent" /> : <IconCopy stroke="white" className="color-white bg-transparent" onClick={copy} />}
         </div>
-        <pre style={{ height: '30vh', color: bgColor }}>{meta.prompts}</pre>
+        <pre style={{ height: '30vh', color: bgColor, whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>{meta.prompts}</pre>
       </div>
     </div>
   </div>)

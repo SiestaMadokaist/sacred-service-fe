@@ -33,7 +33,7 @@ const VariableEditor = (props: IVariableEditor): JSX.Element => {
   const bgColor = !valid ? '#813' : 'white';
   return (<div className="w-100">
     <InputGroup className="mb-2 w-100">
-      <InputGroupText className="w-30">{props.k}</InputGroupText>
+      <InputGroupText style={{ fontSize: '0.8em' }} className="w-30">{props.k}</InputGroupText>
       <Input style={{ backgroundColor: bgColor }} type="text" value={value} onChange={onChange} />
     </InputGroup>
   </div>)
