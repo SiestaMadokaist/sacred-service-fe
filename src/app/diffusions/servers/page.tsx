@@ -15,6 +15,7 @@ import { useToast } from "../../../hooks/useToast";
 import { EC2Instance } from "../../../api/computes/samples";
 import { CheckpointSelector } from "./select-checkpoint";
 import { CheckpointDownloader, CheckpointUpdater } from "./checkpoint-fetcher";
+import { useTitle } from "../../../hooks/useTitle";
 
 interface ICheckpoint {
   region: string;
@@ -89,11 +90,13 @@ const ComputeManager: React.FC = () => {
     fetchInstances();
   }, []);
 
+  useTitle("🖥️ Server Manager");
+
   return (
     <Container className="mt-5">
       <Row className="mb-3">
         <Col>
-          <h2 style={{ "color": "#66CCFF " }}>EC2 Instance Manager</h2>
+          <h2 style={{ "color": "#66CCFF " }}>Sacred Spot Manager</h2>
         </Col>
       </Row>
 

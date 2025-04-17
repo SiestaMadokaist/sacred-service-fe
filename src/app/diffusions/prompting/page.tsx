@@ -29,7 +29,7 @@ function InnerPage(): JSX.Element {
 }
 
 export default function WrappedPage(): JSX.Element {
-  useTitle("Prompting Page");
+  useTitle("📝 Prompting Page ");
   return (
     <PromptProvider>
       <InnerPage />
