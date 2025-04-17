@@ -2,8 +2,6 @@ import { AxiosInstance } from "axios";
 import { ICheckpoint } from "./interface";
 import { Button, Card, CardBody, CardText, CardTitle, Input, InputGroup, InputGroupText } from "reactstrap";
 import { useState } from "react";
-import Select from "react-select/base";
-import CreatableSelect from "react-select/creatable";
 
 export interface IFetcher {
   checkpoints: ICheckpoint[];
@@ -17,9 +15,13 @@ interface ICheckpointPicker {
 }
 function CheckpointPicker(props: ICheckpointPicker): JSX.Element {
   const { checkpoint, onClick } = props;
+  const checkpointName = checkpoint
+    .key
+    .replace(/^checkpoints\//, '')
+    .replace(/\.safetensors$/, '')
   const bgColor = props.isOn ? '#bbf7d0 ' : 'white';
-  return (<Card style={{ backgroundColor: bgColor, cursor: 'pointer', width: '32%', marginLeft: '1%', marginBottom: '1%' }} onClick={() => onClick(checkpoint)}>
-    <CardTitle>{checkpoint.key}</CardTitle>
+  return (<Card className="justify-content-center align-items-center" style={{ minHeight: '4em', backgroundColor: bgColor, cursor: 'pointer', width: '48%', marginLeft: '1%', marginBottom: '1%' }} onClick={() => onClick(checkpoint)}>
+    <CardTitle>{checkpointName}</CardTitle>
   </Card>)
 }
 
@@ -55,6 +57,6 @@ export function CheckpointDownloader(props: ICheckpointDownloader): JSX.Element 
       <InputGroupText>URL</InputGroupText>
       <Input placeholder="https://civitai-delivery-worker-prod..." value={downloadURL} onChange={(e) => setDownloadURL(e.target.value)}></Input>
     </InputGroup>
-    <Button className="w-100 mt-2" color="success" onClick={onClick}>Download</Button>
+    <Button className="w-100 mt-2" color="success" onClick={onClick}>Download Checkpoint</Button>
   </div>)
 }

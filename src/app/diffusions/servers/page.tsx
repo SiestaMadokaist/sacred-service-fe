@@ -123,7 +123,10 @@ const ComputeManager: React.FC = () => {
 
   useTitle("🖥️ Server Manager");
   const date = new Date();
-  const monthlyEstimate = parseFloat(billMTD.Amount) * 30 / date.getDate();
+  const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+  const daysInMonth = endOfMonth.getDate();
+  const daysPassedInMonth = date.getDate();
+  const monthlyEstimate = parseFloat(billMTD.Amount) * (daysInMonth / daysPassedInMonth);
 
   return (
     <Container className="mt-5">

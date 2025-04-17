@@ -28,8 +28,8 @@ const DownloadS3 = (props: IDownloadS3): JSX.Element => {
     }
     await computeAPI.post('/sd-models/download', params);
   }
-  return (<div className="w-100 mt-2">
-    <Button color="primary" onClick={action} className="w-100">{filename}</Button>
+  return (<div className="w-48 mt-2" style={{ marginLeft: '1%' }}>
+    <Button style={{ height: '4em' }} color="primary" onClick={action} className="w-100">{filename}</Button>
   </div>)
 }
 
@@ -45,8 +45,9 @@ export const FromS3 = (props: IFromS3): JSX.Element => {
     }
     action();
   }, []);
-  return (<div className="w-100 h-100 overflow-auto">
-    <div style={{ maxHeight: '1px' }} className="mt-2 bg-gray h-1vh" />
-    {s3Loras.map((x) => <DownloadS3 computeAPI={computeAPI} lora={x} key={x.key} />)}
+  return (<div className="w-100 h-100 overflow-auto mt-2">
+    <div className="d-flex flex-wrap w-100">
+      {s3Loras.map((x) => <DownloadS3 computeAPI={computeAPI} lora={x} key={x.key} />)}
+    </div>
   </div>)
 }

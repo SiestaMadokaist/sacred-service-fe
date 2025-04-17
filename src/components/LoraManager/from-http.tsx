@@ -22,6 +22,6 @@ export const FromHTTP = (props: IFetchHTTP): JSX.Element => {
       <InputGroupText>URL</InputGroupText>
       <Input placeholder="https://civitai-delivery-worker-prod.5ac063..." value={url} onChange={(e) => setURL(e.target.value)}></Input>
     </InputGroup>
-    <Button color="success" onClick={action} className="w-100 mt-2">Download</Button>
+    <Button color="success" onClick={action} className="w-100 mt-2">Download Lora</Button>
   </div>);
 }
