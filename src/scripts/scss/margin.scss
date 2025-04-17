@@ -1,0 +1,10 @@
+@for $i from 1 through 20 {
+  .ml-#{$i * 5} {
+    margin-left: #{$i * 5}#{'%'};
+  }
+
+  .mt-#{$i * 5}vh {
+    margin-top: #{$i * 5}vh;
+  }
+  
+}

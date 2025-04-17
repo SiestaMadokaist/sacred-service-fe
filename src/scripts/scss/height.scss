@@ -1,0 +1,20 @@
+@for $i from 1 through 100 {
+  .h-#{$i}vh {
+    height: #{$i}vh;
+  }
+
+  .h-#{$i} {
+    height: #{$i}#{'%'};
+  }
+  
+  .h-#{$i}p {
+    height: #{$i}px;
+  }
+.min-h-#{$i}vh {
+  min-height: #{$i}vh;
+}
+
+.min-h-#{$i} {
+  min-height: #{$i}#{'%'};
+}
+}
