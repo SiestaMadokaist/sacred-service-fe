@@ -33,9 +33,9 @@ const VariableEditor = (props: IVariableEditor): JSX.Element => {
   const autoInsert = (key: string) => {
     const index = ctx.activeIndex;
     const template0 = ctx.templates[index];
-    const template1 = template0.replaceAll(`{${key}}`, '');
+    const template1 = template0.prompt.replaceAll(`{${key}}`, '');
     const newTemplate = `${template1}{${key}}`;
-    ctx.setTemplate(index, newTemplate);
+    ctx.setTemplate(index, { prompt: newTemplate });
   }
   console.log({ k: ctx.varCounts })
 
