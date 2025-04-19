@@ -1,5 +1,5 @@
 import { Card, CardBody } from "reactstrap";
-import { Draggable } from "../../../components/DragNDrop/Draggable";
+import { Draggable } from "../../../components/DragNDrop/ImageURLDropzone";
 export interface IDestinationPreview {
   destinations: Set<string>;
   onImageClicked: (url: string) => void;

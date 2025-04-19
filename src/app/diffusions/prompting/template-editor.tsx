@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react"
-import { usePromptContext } from "./context";
-import { Col, Input, Row } from "reactstrap";
+import { ITemplate, usePromptContext } from "./context";
+import { Button, Col, Input, Label, Row } from "reactstrap";
 import { useDebounce } from "use-debounce";
+import { ImageUrlDropzone } from "../../../components/DragNDrop/ImageURLDropzone";
 
 export interface ITemplateEditor {
   index: number;
-  template: string;
+  template: ITemplate;
 }
 
 export interface ISinglePrompt {
@@ -32,7 +33,7 @@ const PromptViewer = (props: ISinglePrompt): JSX.Element => {
 
 export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
   const ctx = usePromptContext();
-  const [localTemplate, setLocalTemplate] = useState<string>(props.template);
+  const [localTemplate, setLocalTemplate] = useState<string>(props.template.prompt);
   const [debouncedTemplate] = useDebounce(localTemplate, 1000);
   const valueLeak = (t: string, vars: Record<string, string>): [string, string] | [null, null] => {
     const keys = Object.keys(vars);
@@ -69,7 +70,7 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
   }
 
   useEffect(() => {
-    setLocalTemplate(props.template);
+    setLocalTemplate(props.template.prompt);
   }, [props.template])
 
   const validateTemplate = (template: string) => {
@@ -105,21 +106,33 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
       return;
     }
     setValid(true);
-    ctx.setTemplate(props.index, localTemplate);
+    ctx.setTemplate(props.index, { prompt: debouncedTemplate });
   }, [debouncedTemplate])
+
   const addTemplate = () => {
-    const [firstLine] = localTemplate.split('\n');
-    ctx.addTemplate(props.index + 1, firstLine ?? '--');
+    const newTemplate: ITemplate = {
+      prompt: localTemplate,
+    }
+    ctx.addTemplate(props.index + 1, newTemplate);
   }
-  return (<Row className="mt-2 d-flex flex-wrap w-100">
-    <Col onClick={addTemplate} sm="1" xs="1" style={{ width: '3ch', paddingRight: '0.5rem', color: 'white' }}>{props.index + 1}</Col>
-    <Col>
-      <Input style={{ fontFamily: 'monospace', fontSize: '0.875rem', ...colorProperties }} className="h-100" type="textarea" value={localTemplate} onChange={(e) => setLocalTemplate(e.target.value)} />
-    </Col>
-    <Col>
-      <pre>
-        <PromptViewer prompt={ctx.buildPrompt(localTemplate)} />
-      </pre>
-    </Col>
-  </Row>)
+
+  return (<div className="d-flex w-100 flex-wrap">
+    <Row className="mt-2 d-flex flex-wrap w-100" style={{ borderBottom: '2px solid #2c3e3f', paddingBottom: '0.5rem' }}>
+      <Col onClick={() => console.log('test')} sm="2" className="d-flex flex-wrap justify-content-center align-items-center">
+        <p onClick={addTemplate} style={{ cursor: 'pointer', textAlign: 'center' }} className="w-100 color-white">{props.index + 1}</p>
+        <ImageUrlDropzone onUrlDrop={console.log} />
+        <Button style={{ maxHeight: '40px' }} className="w-100 h-50 mt-2" color="primary" onClick={(e) => { e.preventDefault() }}>Try</Button>
+      </Col>
+
+      <Col>
+        <Input style={{ fontFamily: 'monospace', fontSize: '0.875rem', ...colorProperties }} className="h-100" type="textarea" value={localTemplate} onChange={(e) => setLocalTemplate(e.target.value)} />
+      </Col>
+      <Col>
+        <pre>
+          <PromptViewer prompt={ctx.buildPrompt(localTemplate)} />
+        </pre>
+      </Col>
+    </Row>
+  </div>
+  )
 }

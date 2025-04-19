@@ -81,6 +81,12 @@ const LoginPage: React.FC = () => {
       const { data: auth } = await userAPI.post<IAuth>("/login", { username, password });
       setAuth(auth);
       setAuthorized(true);
+      if (location.href.includes("prev=")) {
+        const prev = new URLSearchParams(location.search).get("prev");
+        if (prev) {
+          window.location.href = decodeURIComponent(prev);
+        }
+      }
     }
   };
 

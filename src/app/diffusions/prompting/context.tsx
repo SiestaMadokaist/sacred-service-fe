@@ -5,6 +5,16 @@ import { apiHub } from "../../../api/hub";
 import { useApi } from "../../../hooks/useApi";
 import { SYSTEM_ENV } from "../../../helper/env";
 
+
+export interface ITemplate {
+  prompt: string;
+  controlnet?: {
+    source: string;
+    module: "canny";
+    model: "control_v11p_sd15_canny [d14c016b]",
+  }
+}
+
 interface IPromptingContext {
   variables: Record<string, string>;
   promptPrefix: string;
@@ -12,9 +22,10 @@ interface IPromptingContext {
   setVariables: (variables: Record<string, string>) => void;
   getPrompts: () => string;
   buildPrompt: (template: string) => string;
-  setTemplate: (index: number, template: string) => void;
-  addTemplate: (after: number, template: string) => void;
-  templates: string[];
+  setTemplate: (index: number, template: ITemplate) => void;
+  addTemplate: (after: number, template: ITemplate) => void;
+  templates: ITemplate[];
+  varCounts: Record<string, number>;
   computeAPI: AxiosInstance;
   promptAPI: AxiosInstance;
   toastElement: JSX.Element;
@@ -35,8 +46,9 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
   const computeAPI = useApi(hub, '/computes');
   const { toastElement, showToast } = useToast({ duration: 3000 });
   const [variables, setVariables] = useState<Record<string, string>>({});
+  const [varCounts, setVarCounts] = useState<Record<string, number>>({});
 
-  const [templates, setTemplates] = useState<string[]>([]);
+  const [templates, _setTemplates] = useState<ITemplate[]>([]);
   const [templateId, setTemplateId] = useState<string>('');
   const [activeIndex, setActiveIndex] = useState<number>(0);
 
@@ -50,8 +62,22 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
     return tplVars;
   };
 
+  const setTemplates = (templates: ITemplate[]) => {
+    const localVarCounts: Record<string, number> = {}
+    for (const template of templates) {
+      const varKeys = Object.keys(variables);
+      for (const v of varKeys) {
+        if (template.prompt.includes(`{${v}}`)) {
+          localVarCounts[v] = (localVarCounts[v] ?? 0) + 1;
+        }
+      }
+    }
+    setVarCounts(localVarCounts);
+    _setTemplates(templates);
+  }
+
   const updateVariables = () => {
-    const tplVars = detectVariables(templates.join('\n'));
+    const tplVars = detectVariables(templates.map((x) => x.prompt).join('\n'));
     const oldVars = variables;
     const newVars: Record<string, string> = {};
     const sortedKeys = Object.keys(tplVars).sort((a, b) => a.localeCompare(b));
@@ -61,7 +87,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
     setVariables(newVars);
   }
 
-  const addTemplate = (after: number, template: string) => {
+  const addTemplate = (after: number, template: ITemplate) => {
     if (after === templates.length) {
       setTemplates([...templates, template]);
       return;
@@ -75,7 +101,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
     updateVariables();
   }, [templates])
 
-  const setTemplate = (index: number, template: string) => {
+  const setTemplate = (index: number, template: ITemplate) => {
     if (index === templates.length) {
       setTemplates([...templates, template]);
       return;
@@ -101,11 +127,12 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
         return;
       }
       const promptPath = `${PROMPT_PREFIX}/${templateId}`;
-      const resp = await axios.get<{ templateId: string, templates: string[], variables: Record<string, string> }>(promptPath);
+      const resp = await axios.get<{ templateId: string, templates: ITemplate[], variables: Record<string, string> }>(promptPath);
       const { data } = resp
       const vars = data.variables ?? {};
       setVariables(vars);
-      setTemplates(data.templates);
+      const templates = data.templates as ITemplate[];
+      setTemplates(templates);
     }
     action();
   }, [templateId])
@@ -121,12 +148,13 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
   }
 
   const getPrompts = (): string => {
-    return templates.map(buildPrompt).join('\n\n');
+    return templates.map((x) => x.prompt).map(buildPrompt).join('\n\n');
   }
 
   return (
     <PromptContext.Provider value={{
       variables,
+      varCounts,
       promptPrefix: PROMPT_PREFIX,
       activeIndex,
       templateId,

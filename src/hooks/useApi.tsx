@@ -5,9 +5,9 @@ const navigate = (path: string) => {
   const { href } = window.location;
   const isHTML = href.endsWith('.html');
   if (isHTML) {
-    window.location.href = `${path}.html`
+    window.location.href = `${path}.html?prev=${encodeURIComponent(href)}`;
   } else {
-    window.location.href = path;
+    window.location.href = `${path}?prev=${encodeURIComponent(href)}`;
   }
 }
 

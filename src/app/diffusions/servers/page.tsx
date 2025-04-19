@@ -17,7 +17,6 @@ import { CheckpointSelector } from "./select-checkpoint";
 import { CheckpointDownloader, CheckpointUpdater } from "./checkpoint-fetcher";
 import { useTitle } from "../../../hooks/useTitle";
 import { LoraManager } from "../../../components/LoraManager";
-import { data } from "react-router-dom";
 
 interface ICheckpoint {
   region: string;
@@ -132,7 +131,7 @@ const ComputeManager: React.FC = () => {
     <Container className="mt-5">
       <Row className="mb-3 justify-content-between align-items-center">
         <Col>
-          <h2 style={{ "color": "#66CCFF " }}>Sacred Service</h2>
+          <h2 style={{ "color": "#66CCFF " }}>Sacred Secret Service</h2>
           <h2 style={{ "color": "#66CCFF " }}>
             {parseFloat(billMTD.Amount).toFixed(3)} {billMTD.Unit} / {monthlyEstimate.toFixed(3)} {billMTD.Unit}
           </h2>

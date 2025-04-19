@@ -1,5 +1,5 @@
 import { Card, CardBody } from "reactstrap";
-import { Draggable } from "../../../components/DragNDrop/Draggable";
+import { Draggable } from "../../../components/DragNDrop/ImageURLDropzone";
 import { UniqueIdentifier } from "@dnd-kit/core";
 import { useSortable } from "@dnd-kit/sortable";
 import { useState } from "react";

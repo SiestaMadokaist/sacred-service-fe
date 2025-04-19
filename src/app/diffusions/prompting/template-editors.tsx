@@ -16,7 +16,7 @@ export const TemplateEditors = (): JSX.Element => {
     }
     await promptAPI.post(`/`, {
       templateId,
-      templates: templates.filter((x) => x.length > 0),
+      templates: templates.filter((x) => x.prompt.length > 0),
       variables: ctx.variables,
     });
     showToast({ title: 'Save Success', message: 'Template Saved', level: 'success', show: true });
@@ -26,7 +26,7 @@ export const TemplateEditors = (): JSX.Element => {
   const copy = async () => {
     const { templates } = ctx;
     const tagged = templates.map((x) => {
-      return `(batch-${ctx.templateId}-${Date.now()}):(0.0001)\n${x}`;
+      return `(batch-${ctx.templateId}-${Date.now()}):(0.0001)\n${x.prompt}`;
     })
     const combined = tagged.map((x) => x.split('\n').join(',')).join('\n\n');
     await navigator.clipboard.writeText(ctx.buildPrompt(combined));
@@ -36,7 +36,7 @@ export const TemplateEditors = (): JSX.Element => {
   return (
     <div>
       <div style={{ maxHeight: '80vh', overflow: 'auto', scrollbarWidth: 'none' }} className="w-100 h-100">
-        {templates.map((x, i) => (<TemplateEditor key={`prompt-${i}`} index={i} template={ctx.templates[i]}/>))}
+        {templates.map((x, i) => (<TemplateEditor key={`prompt-${i}`} index={i} template={ctx.templates[i]} />))}
       </div>
       <div className="w-100 d-flex flex-wrap justify-content-center align-items-center mt-2">
         <Button onClick={save} color="success" className="w-90">Save</Button>
