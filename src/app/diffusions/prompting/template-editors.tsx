@@ -1,9 +1,13 @@
-import { usePromptContext } from "./context";
+import { IGeneratePortrait, usePromptContext } from "./context";
 import { Button } from "reactstrap";
 import { TemplateEditor } from "./template-editor";
-import { TemplateInverter } from "./template-inverter";
+// import { TemplateInverter } from "./template-inverter";
 import { IconCopy } from "@tabler/icons-react";
 
+const negativePrompt = `lowres, worst aesthetic, bad quality, worst quality, bad anatomy, jpeg artifacts, scan artifacts, 
+lossy-lossless, unfinished, ugly, poorly drawn, greyscale, 
+(illustration, 2d, 2.5D, 3d, painting \(medium\), toon \(style\), sketch, comic, anime,flat color,outline,smooth skin:1.2) 
+watermark, text, extra digits, female face out of frame`;
 export const TemplateEditors = (): JSX.Element => {
   const ctx = usePromptContext();
 
@@ -33,13 +37,36 @@ export const TemplateEditors = (): JSX.Element => {
     ctx.showToast({ title: 'Copy Success', message: 'Prompt Copied', level: 'success', show: true });
   }
 
+  const pushQueue = async () => {
+    const { templates } = ctx;
+    const prompts: IGeneratePortrait[] = templates.map((x) => ({
+      prompt: ctx.buildPrompt(x.prompt),
+      controlnet: x.controlnet,
+      negative_prompt: negativePrompt,
+      width: 1000,
+      height: 1200,
+      steps: 20,
+      sampler_name: 'DPM++ 2M Karras',
+      seed: -1,
+    }));
+    const params = {
+      jobId: `${ctx.templateId}-${Date.now()}`,
+      actionId: `${ctx.templateId}`,
+      resource: prompts,
+    }
+    const { promptAPI } = ctx;
+    await promptAPI.post('/queue', params);
+    const test = await promptAPI.get(`/queue`);
+  }
+
   return (
     <div>
       <div style={{ maxHeight: '80vh', overflow: 'auto', scrollbarWidth: 'none' }} className="w-100 h-100">
         {templates.map((x, i) => (<TemplateEditor key={`prompt-${i}`} index={i} template={ctx.templates[i]} />))}
       </div>
       <div className="w-100 d-flex flex-wrap justify-content-center align-items-center mt-2">
-        <Button onClick={save} color="success" className="w-90">Save</Button>
+        <Button onClick={save} color="success" className="w-40">Save</Button>
+        <Button onClick={pushQueue} color="success" className="w-40 ml-5">Queue</Button>
         <Button onClick={copy} color="primary" className="w-5 ml-5">
           <IconCopy className="bg-transparent" size={16} />
         </Button>

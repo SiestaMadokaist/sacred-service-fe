@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardBody } from 'reactstrap';
 
 export interface IImageUrlDropzone {
-  onUrlDrop(url: string): void;
+  onUrlDrop(url?: string): void;
 }
 
 export const ImageUrlDropzone = (props: IImageUrlDropzone): JSX.Element => {
   const { onUrlDrop } = props;
   const [, setIsDragging] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | undefined>();
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -17,7 +17,6 @@ export const ImageUrlDropzone = (props: IImageUrlDropzone): JSX.Element => {
     const droppedText = e.dataTransfer.getData('text');
     if (isValidImageUrl(droppedText)) {
       setPreviewUrl(droppedText);
-      onUrlDrop(droppedText);
     } else {
       alert('Please drop a valid image URL.');
     }
@@ -28,8 +27,12 @@ export const ImageUrlDropzone = (props: IImageUrlDropzone): JSX.Element => {
   };
 
   const removeImage = () => {
-    setPreviewUrl(null);
+    setPreviewUrl(undefined);
   }
+
+  useEffect(() => {
+    props.onUrlDrop(previewUrl);
+  }, [previewUrl]);
 
   return (
     <Card

@@ -5,13 +5,46 @@ import { apiHub } from "../../../api/hub";
 import { useApi } from "../../../hooks/useApi";
 import { SYSTEM_ENV } from "../../../helper/env";
 
+export interface IGeneratePortrait {
+  controlnet?: {
+    model: "illustriousXLCanny_v10 [40f566e5]";
+    module: "canny";
+    source: string;
+  }
+  negative_prompt: string;
+  prompt: string;
+  sampler_name: "DPM++ 2M Karras";
+  seed: number;
+  steps: 20 | 25 | 30;
+  height: 1200;
+  width: 1000;
+}
+
+export interface IGenerateLandscape {
+  controlnet?: {
+    model: "illustriousXLCanny_v10 [40f566e5]";
+    module: "canny";
+    source: string;
+  }
+  negative_prompt: string;
+  prompt: string;
+  sampler_name: "DPM++ 2M Karras";
+  seed: number;
+  steps: 20 | 25 | 30;
+  height: 1000;
+  width: 1200;
+}
 
 export interface ITemplate {
   prompt: string;
   controlnet?: {
     source: string;
     module: "canny";
-    model: "control_v11p_sd15_canny [d14c016b]",
+    model: "illustriousXLCanny_v10 [40f566e5]",
+  }
+  size?: {
+    width: number;
+    height: number;
   }
 }
 

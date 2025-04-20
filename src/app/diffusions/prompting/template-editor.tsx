@@ -78,6 +78,8 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
   }
 
   const [valid, setValid] = useState(true);
+  const [controlnetImage, setControlnetImage] = useState<string | undefined>();
+
   const colorProperties: React.CSSProperties = (() => {
     if (!valid) {
       return { backgroundColor: "#6b1f1f", color: "#f8d1d1" };
@@ -106,8 +108,19 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
       return;
     }
     setValid(true);
-    ctx.setTemplate(props.index, { prompt: debouncedTemplate });
-  }, [debouncedTemplate])
+    if (typeof controlnetImage === 'undefined') {
+      ctx.setTemplate(props.index, { prompt: debouncedTemplate });
+    } else {
+      ctx.setTemplate(props.index, {
+        prompt: debouncedTemplate,
+        controlnet: {
+          source: controlnetImage,
+          model: 'illustriousXLCanny_v10 [40f566e5]',
+          module: "canny",
+        },
+      });
+    }
+  }, [debouncedTemplate, controlnetImage])
 
   const addTemplate = () => {
     const newTemplate: ITemplate = {
@@ -120,7 +133,7 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
     <Row className="mt-2 d-flex flex-wrap w-100" style={{ borderBottom: '2px solid #2c3e3f', paddingBottom: '0.5rem' }}>
       <Col onClick={() => console.log('test')} sm="2" className="d-flex flex-wrap justify-content-center align-items-center">
         <p onClick={addTemplate} style={{ cursor: 'pointer', textAlign: 'center' }} className="w-100 color-white">{props.index + 1}</p>
-        <ImageUrlDropzone onUrlDrop={console.log} />
+        <ImageUrlDropzone onUrlDrop={(imageURL) => setControlnetImage(imageURL)} />
         <Button style={{ maxHeight: '40px' }} className="w-100 h-50 mt-2" color="primary" onClick={(e) => { e.preventDefault() }}>Try</Button>
       </Col>
 
