@@ -49,7 +49,7 @@ export function CheckpointDownloader(props: ICheckpointDownloader): JSX.Element 
     await api.post('/sd-models/download', { 
       url: downloadURL, 
       ts: Date.now(), 
-      type: 'checkpooints',
+      type: 'checkpoints',
     });
   }
   return (<div className="d-flex flex-wrap w-100 mb-3">

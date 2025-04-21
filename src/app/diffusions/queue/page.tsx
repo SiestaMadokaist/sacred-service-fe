@@ -73,7 +73,7 @@ const QueueElement = (props: IQueueElement) : JSX.Element => {
   </div>)
 }
 
-export const QueuePage = (): JSX.Element => {
+export default function QueuePage(): JSX.Element {
   const [hub] = useState(apiHub());
   const promptAPI = useApi(hub, '/prompts');
   const [queueData, setQueue] = useState<ITask[]>([]);
@@ -115,5 +115,3 @@ export const QueuePage = (): JSX.Element => {
     </div>
   </div>)
 }
-
-export default QueuePage;

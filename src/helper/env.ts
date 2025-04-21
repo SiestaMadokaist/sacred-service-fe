@@ -6,4 +6,4 @@ export const SYSTEM_ENV = {
   OSS_API: process.env.NEXT_PUBLIC_OSS_API,
   PROMPT_PREFIX: process.env.NEXT_PUBLIC_PROMPT_PREFIX,
   IMAGE_PREFIX: process.env.NEXT_PUBLIC_IMAGE_PREFIX,
-} as Record<string, string>
+};

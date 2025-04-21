@@ -21,7 +21,6 @@ export const useLoginAPI = (hub: ApiHub, resource: Resource) => {
   }, [hub, navigate]);
   const api = useMemo(() => apiLambda(resource, hub, getAuth()), [resource, hub]);
   return api;
-
 }
 
 export const useApi = (hub: ApiHub, resource: Resource) => {
