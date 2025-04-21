@@ -1,5 +1,5 @@
 import { IGeneratePortrait, usePromptContext } from "./context";
-import { Button } from "reactstrap";
+import { Button, Input, InputGroup, InputGroupText } from "reactstrap";
 import { TemplateEditor } from "./template-editor";
 // import { TemplateInverter } from "./template-inverter";
 import { IconCopy } from "@tabler/icons-react";
@@ -11,20 +11,6 @@ watermark, text, extra digits, female face out of frame`;
 export const TemplateEditors = (): JSX.Element => {
   const ctx = usePromptContext();
 
-  const save = async () => {
-    const { promptAPI, showToast } = ctx;
-    const { templateId } = ctx;
-    if (!templateId) {
-      showToast({ title: 'Save Failed', message: 'TemplateID is blank', level: 'danger', show: true });
-      return;
-    }
-    await promptAPI.post(`/`, {
-      templateId,
-      templates: templates.filter((x) => x.prompt.length > 0),
-      variables: ctx.variables,
-    });
-    showToast({ title: 'Save Success', message: 'Template Saved', level: 'success', show: true });
-  }
   const { templates } = ctx;
 
   const copy = async () => {
@@ -41,13 +27,14 @@ export const TemplateEditors = (): JSX.Element => {
     const { templates } = ctx;
     const prompts: IGeneratePortrait[] = templates.map((x) => ({
       prompt: ctx.buildPrompt(x.prompt),
-      controlnet: x.controlnet,
+      controlnet: x.controlnet ?? {},
       negative_prompt: negativePrompt,
       width: 1000,
       height: 1200,
       steps: 20,
       sampler_name: 'DPM++ 2M Karras',
       seed: -1,
+      n_iter: ctx.nIter,
     }));
     const params = {
       jobId: `${ctx.templateId}-${Date.now()}`,
@@ -65,11 +52,14 @@ export const TemplateEditors = (): JSX.Element => {
         {templates.map((x, i) => (<TemplateEditor key={`prompt-${i}`} index={i} template={ctx.templates[i]} />))}
       </div>
       <div className="w-100 d-flex flex-wrap justify-content-center align-items-center mt-2">
-        <Button onClick={save} color="success" className="w-40">Save</Button>
-        <Button onClick={pushQueue} color="success" className="w-40 ml-5">Queue</Button>
-        <Button onClick={copy} color="primary" className="w-5 ml-5">
+        <Button onClick={copy} color="primary" className="w-10">
           <IconCopy className="bg-transparent" size={16} />
         </Button>
+        <InputGroup className="w-40 ml-5">
+          <InputGroupText>Repeat Count:</InputGroupText>
+          <Input min="1" max="5" type="number" placeholder="nIter" value={ctx.nIter} onChange={(e) => ctx.setNIter(parseInt(e.target.value))} />
+        </InputGroup>
+        <Button onClick={pushQueue} color="warning" className="w-40 ml-5">Queue</Button>
       </div>
     </div>
 )

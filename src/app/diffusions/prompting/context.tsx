@@ -6,11 +6,11 @@ import { useApi } from "../../../hooks/useApi";
 import { SYSTEM_ENV } from "../../../helper/env";
 
 export interface IGeneratePortrait {
-  controlnet?: {
+  controlnet: {
     model: "illustriousXLCanny_v10 [40f566e5]";
     module: "canny";
     source: string;
-  }
+  } | {};
   negative_prompt: string;
   prompt: string;
   sampler_name: "DPM++ 2M Karras";
@@ -52,6 +52,8 @@ interface IPromptingContext {
   variables: Record<string, string>;
   promptPrefix: string;
   activeIndex: number;
+  nIter: number;
+  setNIter: (nIter: number) => void;
   setVariables: (variables: Record<string, string>) => void;
   getPrompts: () => string;
   buildPrompt: (template: string) => string;
@@ -84,6 +86,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
   const [templates, _setTemplates] = useState<ITemplate[]>([]);
   const [templateId, setTemplateId] = useState<string>('');
   const [activeIndex, setActiveIndex] = useState<number>(0);
+  const [nIter, setNIter] = useState<number>(1);
 
   const detectVariables = (tpl: string) => {
     const matches = tpl.match(/{(.*?)}/g) || [];
@@ -188,6 +191,8 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
     <PromptContext.Provider value={{
       variables,
       varCounts,
+      nIter,
+      setNIter,
       promptPrefix: PROMPT_PREFIX,
       activeIndex,
       templateId,
