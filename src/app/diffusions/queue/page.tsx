@@ -78,6 +78,7 @@ export default function QueuePage(): JSX.Element {
   const promptAPI = useApi(hub, '/prompts');
   const [queueData, setQueue] = useState<ITask[]>([]);
   const fetchQueue = async () => {
+    if (document?.visibilityState === 'hidden') { return }
     const resp = await promptAPI.get('/queue');
     const data = resp.data as ITask[];
     setQueue(data);
@@ -95,9 +96,7 @@ export default function QueuePage(): JSX.Element {
 
   useEffect(() => {
     fetchQueue();
-    const interval = setInterval(() => {
-      fetchQueue();
-    }, 15_000);
+    const interval = setInterval(fetchQueue, 15_000);
     return () => {
       clearInterval(interval);
     }

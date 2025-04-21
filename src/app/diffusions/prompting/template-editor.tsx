@@ -129,14 +129,18 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
     ctx.addTemplate(props.index + 1, newTemplate);
   }
 
+  const pushQueue = async () => {
+    const ref = ctx.templates[props.index];
+    const updated = {
+      ...ref,
+      template: localTemplate,
+    }
+    const prompts: ITemplate[] = [updated];
+    await ctx.pushQueue(prompts);
+  }
+
   return (<div className="d-flex w-100 flex-wrap">
     <Row className="mt-2 d-flex flex-wrap w-100" style={{ borderBottom: '2px solid #2c3e3f', paddingBottom: '0.5rem' }}>
-      <Col onClick={() => console.log('test')} sm="2" className="d-flex flex-wrap justify-content-center align-items-center">
-        <p onClick={addTemplate} style={{ cursor: 'pointer', textAlign: 'center' }} className="w-100 color-white">{props.index + 1}</p>
-        <ImageUrlDropzone onUrlDrop={(imageURL) => setControlnetImage(imageURL)} />
-        <Button style={{ maxHeight: '40px' }} className="w-100 h-50 mt-2" color="primary" onClick={(e) => { e.preventDefault() }}>Try</Button>
-      </Col>
-
       <Col>
         <Input style={{ fontFamily: 'monospace', fontSize: '0.875rem', ...colorProperties }} className="h-100" type="textarea" value={localTemplate} onChange={(e) => setLocalTemplate(e.target.value)} />
       </Col>
@@ -144,6 +148,11 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
         <pre>
           <PromptViewer prompt={ctx.buildPrompt(localTemplate)} />
         </pre>
+      </Col>
+      <Col onClick={() => console.log('test')} sm="2" className="d-flex flex-wrap justify-content-center align-items-center">
+        <p onClick={addTemplate} style={{ cursor: 'pointer', textAlign: 'center' }} className="w-100 color-white">{props.index + 1}</p>
+        <ImageUrlDropzone onUrlDrop={(imageURL) => setControlnetImage(imageURL)} />
+        <Button style={{ maxHeight: '40px' }} className="w-100 h-50 mt-2" color="primary" onClick={pushQueue}>Try</Button>
       </Col>
     </Row>
   </div>

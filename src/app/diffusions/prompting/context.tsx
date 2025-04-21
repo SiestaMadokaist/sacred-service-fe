@@ -60,6 +60,7 @@ interface IPromptingContext {
   setTemplate: (index: number, template: ITemplate) => void;
   addTemplate: (after: number, template: ITemplate) => void;
   templates: ITemplate[];
+  pushQueue: (ts: ITemplate[]) => Promise<void>;
   varCounts: Record<string, number>;
   computeAPI: AxiosInstance;
   promptAPI: AxiosInstance;
@@ -75,6 +76,11 @@ interface IPromptProvider {
   children: ReactNode;
 }
 
+const negativePrompt = `lowres, worst aesthetic, bad quality, worst quality, bad anatomy, jpeg artifacts, scan artifacts, 
+lossy-lossless, unfinished, ugly, poorly drawn, greyscale, 
+(illustration, 2d, 2.5D, 3d, painting \(medium\), toon \(style\), sketch, comic, anime,flat color,outline,smooth skin:1.2) 
+watermark, text, extra digits, female face out of frame`;
+
 export function PromptProvider(props: IPromptProvider): JSX.Element {
   const [hub] = useState(apiHub());
   const promptAPI = useApi(hub, '/prompts');
@@ -87,6 +93,26 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
   const [templateId, setTemplateId] = useState<string>('');
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const [nIter, setNIter] = useState<number>(1);
+
+  const pushQueue = async (ts: ITemplate[]) => {
+    const prompts: IGeneratePortrait[] = ts.map((x) => ({
+      prompt: buildPrompt(x.prompt),
+      controlnet: x.controlnet ?? {},
+      negative_prompt: negativePrompt,
+      width: 1000,
+      height: 1200,
+      steps: 20,
+      sampler_name: 'DPM++ 2M Karras',
+      seed: -1,
+      n_iter: nIter,
+    }));
+    const params = {
+      jobId: `${templateId}-${Date.now()}`,
+      actionId: `${templateId}`,
+      resource: prompts,
+    }
+    await promptAPI.post('/queue', params);
+  }
 
   const detectVariables = (tpl: string) => {
     const matches = tpl.match(/{(.*?)}/g) || [];
@@ -190,6 +216,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
   return (
     <PromptContext.Provider value={{
       variables,
+      pushQueue,
       varCounts,
       nIter,
       setNIter,

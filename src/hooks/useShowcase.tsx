@@ -18,6 +18,7 @@ export const useShowcase = (props: IUseShowcase) => {
   });
 
   const fetchReport = async () => {
+    if (document?.visibilityState === 'hidden') { return }
     const fetchURL = `${props.refURL}?ts=${Date.now()}`;
     const response = await fetch(fetchURL);
     if (response.ok) {

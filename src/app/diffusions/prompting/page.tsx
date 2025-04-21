@@ -11,7 +11,7 @@ import { VariableEditors } from "./variable-editor";
 
 function InnerPage(): JSX.Element {
   const { showcaseElement } = useShowcase({
-    duration: 5000,
+    duration: 30_000,
     fetchInterval: 10_000,
     refURL: `${SYSTEM_ENV.IMAGE_PREFIX}/public/latest.json`,
   });
