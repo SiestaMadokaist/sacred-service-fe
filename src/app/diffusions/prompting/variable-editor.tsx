@@ -3,6 +3,7 @@ import { usePromptContext } from "./context";
 import assert from "assert";
 import { useDebounce } from "use-debounce";
 import { Input, InputGroup, InputGroupText, Row } from "reactstrap";
+import { VariablePreview } from "./variable-preview";
 
 export interface IVariableEditor {
   k: string;
@@ -37,13 +38,21 @@ const VariableEditor = (props: IVariableEditor): JSX.Element => {
     const newTemplate = `${template1}{${key}}`;
     ctx.setTemplate(index, { prompt: newTemplate });
   }
-  console.log({ k: ctx.varCounts })
 
+  const [hovering, setHovering] = useState(false);
+  const onMouseEnter = () => {
+    setHovering(true);
+  }
+  const onMouseLeave = () => {
+    setHovering(false);
+  }
   const bgColor = !valid ? '#813' : 'white';
   return (<div className="w-100">
     <InputGroup className="mb-2 w-100">
       <InputGroupText style={{ fontSize: '0.8em' }} >{ctx.varCounts[props.k]}x</InputGroupText>
-      <InputGroupText onClick={() => autoInsert(props.k)} style={{ fontSize: '0.8em' }} className="w-30">{props.k}</InputGroupText>
+      <InputGroupText onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} onClick={() => autoInsert(props.k)} style={{ fontSize: '0.8em' }} className="w-30">
+        <VariablePreview name={props.k} value={value} isShown={hovering} />
+      </InputGroupText>
       <Input style={{ backgroundColor: bgColor }} type="text" value={value} onChange={onChange} />
     </InputGroup>
   </div>)

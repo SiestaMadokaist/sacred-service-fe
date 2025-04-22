@@ -1,9 +1,8 @@
 "use client";
-import { LoraManager } from "../../../components/LoraManager";
 import { SYSTEM_ENV } from "../../../helper/env";
 import { useShowcase } from "../../../hooks/useShowcase";
 import { useTitle } from "../../../hooks/useTitle";
-import { PromptProvider, usePromptContext } from "./context";
+import { PromptProvider } from "./context";
 import { TemplateEditors } from "./template-editors";
 import { TemplateInverter } from "./template-inverter";
 import { TemplateSelector } from "./template-selector";

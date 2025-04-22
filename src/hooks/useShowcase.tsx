@@ -35,7 +35,7 @@ export const useShowcase = (props: IUseShowcase) => {
   }, [])
 
   useEffect(() => {
-    if (report.createdAt > Date.now() - 86400 * 1000) {
+    if (report.createdAt > Date.now() - 60 * 1000) {
       showToast();
     }
   }, [report.createdAt])

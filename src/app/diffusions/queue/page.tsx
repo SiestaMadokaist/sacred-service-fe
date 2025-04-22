@@ -7,6 +7,8 @@ import { IconTrash } from "@tabler/icons-react";
 import { useDebounce } from "use-debounce";
 import { AxiosInstance } from "axios";
 import { useToast } from "../../../hooks/useToast";
+import { useShowcase } from "../../../hooks/useShowcase";
+import { SYSTEM_ENV } from "../../../helper/env";
 
 
 export interface ITask {
@@ -84,6 +86,11 @@ export default function QueuePage(): JSX.Element {
     setQueue(data);
   }
   const { toastElement, showToast } = useToast({ duration: 3000 });
+  const { showcaseElement } = useShowcase({
+    duration: 30_000,
+    fetchInterval: 10_000,
+    refURL: `${SYSTEM_ENV.IMAGE_PREFIX}/public/latest.json`,
+  })
 
   useEffect(() => {
     hub.on('api-error', (err: any) => {
@@ -106,6 +113,7 @@ export default function QueuePage(): JSX.Element {
 
   return (<div className="w-100 h-100vh d-flex flex-wrap justify-content-center">
     {toastElement}
+    {showcaseElement}
     <div className="w-90 color-white mt-2 d-flex flex-row justify-content-center align-items-center">
       <h4>Queue Manager</h4>
     </div>

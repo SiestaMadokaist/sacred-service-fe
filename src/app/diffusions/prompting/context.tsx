@@ -62,6 +62,7 @@ interface IPromptingContext {
   templates: ITemplate[];
   pushQueue: (ts: ITemplate[]) => Promise<void>;
   varCounts: Record<string, number>;
+  collectionAPI: AxiosInstance;
   computeAPI: AxiosInstance;
   promptAPI: AxiosInstance;
   toastElement: JSX.Element;
@@ -85,6 +86,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
   const [hub] = useState(apiHub());
   const promptAPI = useApi(hub, '/prompts');
   const computeAPI = useApi(hub, '/computes');
+  const collectionAPI = useApi(hub, '/collections');
   const { toastElement, showToast } = useToast({ duration: 3000 });
   const [variables, setVariables] = useState<Record<string, string>>({});
   const [varCounts, setVarCounts] = useState<Record<string, number>>({});
@@ -232,6 +234,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
       buildPrompt,
       promptAPI,
       computeAPI,
+      collectionAPI,
       toastElement,
       showToast
     }}>
