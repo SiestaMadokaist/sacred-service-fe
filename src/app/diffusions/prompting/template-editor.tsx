@@ -3,6 +3,7 @@ import { ITemplate, usePromptContext } from "./context";
 import { Button, Col, Input, Label, Row } from "reactstrap";
 import { useDebounce } from "use-debounce";
 import { ImageUrlDropzone } from "../../../components/DragNDrop/ImageURLDropzone";
+import { useShowcaseContext } from "../../../hooks/useShowcase";
 
 export interface ITemplateEditor {
   index: number;
@@ -33,6 +34,7 @@ const PromptViewer = (props: ISinglePrompt): JSX.Element => {
 
 export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
   const ctx = usePromptContext();
+  const { showImage } = useShowcaseContext();
   const [localTemplate, setLocalTemplate] = useState<string>(props.template.prompt);
   const [debouncedTemplate] = useDebounce(localTemplate, 1000);
   const valueLeak = (t: string, vars: Record<string, string>): [string, string] | [null, null] => {
@@ -139,18 +141,32 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
     await ctx.pushQueue(prompts);
   }
 
+  const fuzzySearch = async () => {
+    const prompt = ctx.buildPrompt(localTemplate);
+    const qualifier = ctx.variables['qualifier'] ?? '';
+    const promptWithoutQualifier = prompt.replace(qualifier, '');
+    const cleanedPrompts = promptWithoutQualifier.replace(/[\n\r]/g, ' ').replace(/\s+/g, ' ');
+    const resp = await ctx.collectionAPI.post('/fuzzy-filter', {
+      tags: cleanedPrompts.split(',').map((x) => x.trim()),
+    });
+    if (resp.data.length > 0) {
+      showImage(resp.data[0])
+    }
+  }
+
   return (<div className="d-flex w-100 flex-wrap">
     <Row className="mt-2 d-flex flex-wrap w-100" style={{ borderBottom: '2px solid #2c3e3f', paddingBottom: '0.5rem' }}>
       <Col>
-        <Input style={{ fontFamily: 'monospace', fontSize: '0.875rem', ...colorProperties }} className="h-100" type="textarea" value={localTemplate} onChange={(e) => setLocalTemplate(e.target.value)} />
-      </Col>
-      <Col>
+        <p onClick={addTemplate} style={{ cursor: 'pointer', textAlign: 'center' }} className="w-100 color-white">{props.index + 1}</p>
         <pre>
           <PromptViewer prompt={ctx.buildPrompt(localTemplate)} />
         </pre>
       </Col>
+      <Col>
+        <Input style={{ fontFamily: 'monospace', fontSize: '0.875rem', ...colorProperties }} className="h-80" type="textarea" value={localTemplate} onChange={(e) => setLocalTemplate(e.target.value)} />
+        <Button onClick={fuzzySearch} style={{ color: 'yellow' }} className="mt-2 w-100" color="success">Fuzzy Preview</Button>
+      </Col>
       <Col onClick={() => console.log('test')} sm="2" className="d-flex flex-wrap justify-content-center align-items-center">
-        <p onClick={addTemplate} style={{ cursor: 'pointer', textAlign: 'center' }} className="w-100 color-white">{props.index + 1}</p>
         <ImageUrlDropzone onUrlDrop={(imageURL) => setControlnetImage(imageURL)} />
         <Button style={{ maxHeight: '40px' }} className="w-100 h-50 mt-2" color="primary" onClick={pushQueue}>Try</Button>
       </Col>

@@ -22,9 +22,7 @@ export function PictureMetadata(props: IMetadata): JSX.Element {
   const { collectionAPI } = props;
 
   const loadMetadata = async () => {
-    console.log({ src: props.src });
     const url = new URL(props.src);
-    console.log(url);
     const pathname = url.pathname;
     const path = pathname.split('/').slice(2).join('/')
     const response = await collectionAPI.post(`/get-meta`, {

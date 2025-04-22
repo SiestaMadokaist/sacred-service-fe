@@ -55,7 +55,7 @@ const VariableEditor = (props: IVariableEditor): JSX.Element => {
   const bgColor = !valid ? '#813' : 'white';
   return (<div className="w-100">
     <InputGroup className="mb-2 w-100">
-      <InputGroupText onClick={onCountClicked} style={{ backgroundColor: '#ffc107', fontSize: '0.8em', cursor: 'pointer' }} >{ctx.varCounts[props.k]}x</InputGroupText>
+      <InputGroupText className="w-15" onClick={onCountClicked} style={{ backgroundColor: '#ffc107', fontSize: '0.8em', cursor: 'pointer' }} >{ctx.varCounts[props.k]}x</InputGroupText>
       <InputGroupText onClick={() => autoInsert(props.k)} style={{ fontSize: '0.8em' }} className="w-30">
         <VariablePreview hide={() => setShowPreview(false)} name={props.k} value={value} isShown={showPreview} />
       </InputGroupText>

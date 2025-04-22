@@ -1,6 +1,6 @@
 import axios, { AxiosInstance } from "axios";
 import { IToast, useToast } from "../../../hooks/useToast";
-import { createContext, ReactNode, useContext, useEffect, useState } from "react";
+import { createContext, ReactNode, useContext, useEffect, useRef, useState } from "react";
 import { apiHub } from "../../../api/hub";
 import { useApi } from "../../../hooks/useApi";
 import { SYSTEM_ENV } from "../../../helper/env";
@@ -149,7 +149,6 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
     for (const key of sortedKeys) {
       newVars[key] = oldVars[key] ?? '??';
     }
-    console.log({ newVars, oldVars })
     setVariables(newVars);
   }
 
@@ -212,7 +211,6 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
   const getPrompts = (): string => {
     return templates.map((x) => x.prompt).map(buildPrompt).join('\n\n');
   }
-
   return (
     <PromptContext.Provider value={{
       variables,

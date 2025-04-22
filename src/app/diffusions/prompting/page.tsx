@@ -1,6 +1,6 @@
 "use client";
 import { SYSTEM_ENV } from "../../../helper/env";
-import { useShowcase } from "../../../hooks/useShowcase";
+import { ShowcaseProvider } from "../../../hooks/useShowcase";
 import { useTitle } from "../../../hooks/useTitle";
 import { PromptProvider } from "./context";
 import { TemplateEditors } from "./template-editors";
@@ -9,13 +9,7 @@ import { TemplateSelector } from "./template-selector";
 import { VariableEditors } from "./variable-editor";
 
 function InnerPage(): JSX.Element {
-  const { showcaseElement } = useShowcase({
-    duration: 30_000,
-    fetchInterval: 10_000,
-    refURL: `${SYSTEM_ENV.IMAGE_PREFIX}/public/latest.json`,
-  });
   return (<div className="d-flex flex-wrap w-100 mt-2 justify-content-center">
-    {showcaseElement}
     <div className="w-70">
       <TemplateSelector />
       <div className="mt-2 h-90vh">
@@ -34,11 +28,15 @@ function InnerPage(): JSX.Element {
   </div>)
 }
 
+
+
 export default function WrappedPage(): JSX.Element {
   useTitle("📝 Prompting Page ");
   return (
-    <PromptProvider>
-      <InnerPage />
-    </PromptProvider>
+    <ShowcaseProvider fetchInterval={10_000} duration={20_000} refURL={`${SYSTEM_ENV.IMAGE_PREFIX}/public/latest.json`}>
+      <PromptProvider>
+        <InnerPage />
+      </PromptProvider>
+    </ShowcaseProvider>
   )
 }
