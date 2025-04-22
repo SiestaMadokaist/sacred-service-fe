@@ -13,8 +13,6 @@ export function Thumbs(props: IThumbs): JSX.Element {
   const onSelected = (index: number) => {
     setOffset(offset + index);
   }
-
-  console.log({ urls, offset, elmWidth });
   const shownUrls = (urls ?? []).slice(offset, offset + props.size);
   return (<div className="d-flex">
     {shownUrls.map((url, index) => {

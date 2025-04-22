@@ -129,10 +129,12 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
     return tplVars;
   };
 
-  const setTemplates = (templates: ITemplate[]) => {
+  const setTemplates = (newTemplates: ITemplate[]) => {
+    _setTemplates(newTemplates);
+    const vars = updateVariables(newTemplates);
     const localVarCounts: Record<string, number> = {}
-    for (const template of templates) {
-      const varKeys = Object.keys(variables);
+    for (const template of newTemplates) {
+      const varKeys = Object.keys(vars);
       for (const v of varKeys) {
         if (template.prompt.includes(`{${v}}`)) {
           localVarCounts[v] = (localVarCounts[v] ?? 0) + 1;
@@ -140,11 +142,9 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
       }
     }
     setVarCounts(localVarCounts);
-    _setTemplates(templates);
-    updateVariables();
   }
 
-  const updateVariables = () => {
+  const updateVariables = (templates: ITemplate[]): Record<string, string> => {
     const tplVars = detectVariables(templates.map((x) => x.prompt).join('\n'));
     const oldVars = variables;
     const newVars: Record<string, string> = {};
@@ -153,6 +153,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
       newVars[key] = oldVars[key] ?? '??';
     }
     setVariables(newVars);
+    return newVars;
   }
 
   const addTemplate = (after: number, template: ITemplate) => {
@@ -242,7 +243,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
       showToast
     }}>
       {toastElement}
-      <Showcase hub={showHub} fetchInterval={10_000} duration={20_000} refURL={`${SYSTEM_ENV.IMAGE_PREFIX}/public/latest.json`} />
+      <Showcase collectionAPI={collectionAPI} hub={showHub} fetchInterval={10_000} duration={10_000} refURL={`${SYSTEM_ENV.IMAGE_PREFIX}/public/latest.json`} />
       {props.children}
     </PromptContext.Provider>
   )

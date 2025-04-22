@@ -9,7 +9,6 @@ export function Artbox() {
     setOffset,
   } = useGallery();
   const onKeyDown = async (e: React.KeyboardEvent<HTMLDivElement>) => {
-    console.log(e.key);
     if (e.key === 'ArrowLeft') {
       setOffset(offset - 1);
       e.preventDefault()

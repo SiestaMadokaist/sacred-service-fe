@@ -88,6 +88,7 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
     }
     return { backgroundColor: "#2c3e3f", color: "#cfe9e4" };
   })();
+
   useEffect(() => {
     const validTemplate = validateTemplate(debouncedTemplate);
     if (!validTemplate) {
@@ -108,19 +109,8 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
       return;
     }
     setValid(true);
-    if (typeof controlnetImage === 'undefined') {
-      ctx.setTemplate(props.index, { prompt: debouncedTemplate });
-    } else {
-      ctx.setTemplate(props.index, {
-        prompt: debouncedTemplate,
-        controlnet: {
-          source: controlnetImage,
-          model: 'illustriousXLCanny_v10 [40f566e5]',
-          module: "canny",
-        },
-      });
-    }
-  }, [debouncedTemplate, controlnetImage])
+    ctx.setTemplate(props.index, { prompt: debouncedTemplate });
+  }, [debouncedTemplate])
 
   const addTemplate = () => {
     const newTemplate: ITemplate = {
