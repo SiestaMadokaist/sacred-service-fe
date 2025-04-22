@@ -1,8 +1,6 @@
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Toast, ToastBody, ToastHeader } from "reactstrap";
-import { SYSTEM_ENV } from "../helper/env";
-import { ApiHub, ShowHub } from "../api/hub";
-import { on } from "events";
+import { ShowHub } from "../api/hub";
 
 export interface IUseShowcase {
   fetchInterval: number;// in ms;
@@ -89,6 +87,7 @@ export const Showcase = (props: IShowcase): JSX.Element => {
 
   return (<div className="position-fixed bottom-0 end-0 p-3" style={{ zIndex: 5 }}>
     <Toast isOpen={show}>
+      <ToastHeader toggle={() => setShow(false)} />
       <ToastBody>
         <img src={report.url} alt="Latest Showcase" style={{ maxWidth: '100%', maxHeight: '100%' }} />
       </ToastBody>
