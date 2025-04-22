@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react"
-import { apiHub } from "../../../api/hub";
+import { apiHub, initShowHub, ShowHub } from "../../../api/hub";
 import { useApi } from "../../../hooks/useApi";
 import { Button, Input, InputGroup, InputGroupText } from "reactstrap";
 import { IconTrash } from "@tabler/icons-react";
@@ -8,7 +8,8 @@ import { useDebounce } from "use-debounce";
 import { AxiosInstance } from "axios";
 import { useToast } from "../../../hooks/useToast";
 import { SYSTEM_ENV } from "../../../helper/env";
-import { ShowcaseProvider } from "../../../hooks/useShowcase";
+import { Showcase } from "../../../components/showcase";
+import { EventEmitter } from "stream";
 
 export interface ITask {
   jobId: string;
@@ -105,17 +106,17 @@ export default function QueuePage(): JSX.Element {
 
   const onRenew = fetchQueue;
 
+  const [showHub, _] = useState<ShowHub>(initShowHub());
   return (
-    <ShowcaseProvider fetchInterval={10_000} duration={20_000} refURL={`${SYSTEM_ENV.IMAGE_PREFIX}/public/latest.json`}>
-      <div className="w-100 h-100vh d-flex flex-wrap justify-content-center">
-        {toastElement}
-        <div className="w-90 color-white mt-2 d-flex flex-row justify-content-center align-items-center">
-          <h4>Queue Manager</h4>
-        </div>
-        <div className="w-90">
-          {queueData.map((x, i) => (<QueueElement renew={onRenew} promptAPI={promptAPI} key={`queue-${i}`} task={x} />))}
-        </div>
+    <div className="w-100 h-100vh d-flex flex-wrap justify-content-center">
+      <Showcase hub={showHub} fetchInterval={10_000} duration={20_000} refURL={`${SYSTEM_ENV.IMAGE_PREFIX}/public/latest.json`} />
+      {toastElement}
+      <div className="w-90 color-white mt-2 d-flex flex-row justify-content-center align-items-center">
+        <h4>Queue Manager</h4>
       </div>
-    </ShowcaseProvider>
+      <div className="w-90">
+        {queueData.map((x, i) => (<QueueElement renew={onRenew} promptAPI={promptAPI} key={`queue-${i}`} task={x} />))}
+      </div>
+    </div>
   )
 }

@@ -1,9 +1,11 @@
 import axios, { AxiosInstance } from "axios";
 import { IToast, useToast } from "../../../hooks/useToast";
 import { createContext, ReactNode, useContext, useEffect, useRef, useState } from "react";
-import { apiHub } from "../../../api/hub";
+import { apiHub, initShowHub, ShowHub } from "../../../api/hub";
 import { useApi } from "../../../hooks/useApi";
 import { SYSTEM_ENV } from "../../../helper/env";
+import { EventEmitter } from "stream";
+import { Showcase } from "../../../components/showcase";
 
 export interface IGeneratePortrait {
   controlnet: {
@@ -53,6 +55,7 @@ interface IPromptingContext {
   promptPrefix: string;
   activeIndex: number;
   nIter: number;
+  showImage: (imgURL: string) => void;
   setNIter: (nIter: number) => void;
   setVariables: (variables: Record<string, string>) => void;
   getPrompts: () => string;
@@ -207,6 +210,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
     });
     return prompts;
   }
+  const [showHub, _] = useState<ShowHub>(initShowHub());
 
   const getPrompts = (): string => {
     return templates.map((x) => x.prompt).map(buildPrompt).join('\n\n');
@@ -215,6 +219,9 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
     <PromptContext.Provider value={{
       variables,
       pushQueue,
+      showImage: (imgURL: string) => {
+        showHub.emit('show', imgURL);
+      },
       varCounts,
       nIter,
       setNIter,
@@ -235,6 +242,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
       showToast
     }}>
       {toastElement}
+      <Showcase hub={showHub} fetchInterval={10_000} duration={20_000} refURL={`${SYSTEM_ENV.IMAGE_PREFIX}/public/latest.json`} />
       {props.children}
     </PromptContext.Provider>
   )

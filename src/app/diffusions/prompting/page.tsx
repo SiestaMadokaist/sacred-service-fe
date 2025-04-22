@@ -1,6 +1,4 @@
 "use client";
-import { SYSTEM_ENV } from "../../../helper/env";
-import { ShowcaseProvider } from "../../../hooks/useShowcase";
 import { useTitle } from "../../../hooks/useTitle";
 import { PromptProvider } from "./context";
 import { TemplateEditors } from "./template-editors";
@@ -33,10 +31,8 @@ function InnerPage(): JSX.Element {
 export default function WrappedPage(): JSX.Element {
   useTitle("📝 Prompting Page ");
   return (
-    <ShowcaseProvider fetchInterval={10_000} duration={20_000} refURL={`${SYSTEM_ENV.IMAGE_PREFIX}/public/latest.json`}>
-      <PromptProvider>
-        <InnerPage />
-      </PromptProvider>
-    </ShowcaseProvider>
+    <PromptProvider>
+      <InnerPage />
+    </PromptProvider>
   )
 }

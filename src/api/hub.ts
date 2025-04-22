@@ -21,3 +21,13 @@ export interface ApiHub extends EventEmitter {
 }
 
 export const apiHub = () => new EventEmitter() as ApiHub;
+
+export interface ShowHub extends EventEmitter {
+  emit(event: 'show', imgURL: string): boolean;
+  on(event: 'show', cb: (imgURL: string) => void): this;
+
+  emit(event: 'fetch'): boolean;
+  on(event: 'fetch', cb: () => void): this;
+}
+
+export const initShowHub = () => new EventEmitter() as ShowHub;

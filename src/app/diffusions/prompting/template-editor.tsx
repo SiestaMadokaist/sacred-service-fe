@@ -3,7 +3,6 @@ import { ITemplate, usePromptContext } from "./context";
 import { Button, Col, Input, Label, Row } from "reactstrap";
 import { useDebounce } from "use-debounce";
 import { ImageUrlDropzone } from "../../../components/DragNDrop/ImageURLDropzone";
-import { useShowcaseContext } from "../../../hooks/useShowcase";
 
 export interface ITemplateEditor {
   index: number;
@@ -34,7 +33,6 @@ const PromptViewer = (props: ISinglePrompt): JSX.Element => {
 
 export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
   const ctx = usePromptContext();
-  const { showImage } = useShowcaseContext();
   const [localTemplate, setLocalTemplate] = useState<string>(props.template.prompt);
   const [debouncedTemplate] = useDebounce(localTemplate, 1000);
   const valueLeak = (t: string, vars: Record<string, string>): [string, string] | [null, null] => {
@@ -150,7 +148,7 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
       tags: cleanedPrompts.split(',').map((x) => x.trim()),
     });
     if (resp.data.length > 0) {
-      showImage(resp.data[0])
+      ctx.showImage(resp.data[0])
     }
   }
 
