@@ -18,7 +18,7 @@ function InnerPage(): JSX.Element {
     {showcaseElement}
     <div className="w-70">
       <TemplateSelector />
-      <div className="mt-2 h-80vh">
+      <div className="mt-2 h-90vh">
         <TemplateEditors />
       </div>
     </div>

@@ -6,20 +6,15 @@ export interface IVariablePreview {
   name: string;
   value: string;
   isShown: boolean;
+  hide: () => void;
 }
 
 export const VariablePreview = (props: IVariablePreview): JSX.Element => {
-  const { name, value, isShown } = props;
+  const { name, value } = props;
   const ctx = usePromptContext();
   const [imgURL, setUrl] = useState<string>('');
   const [latestSearch, setLatestSearch] = useState<string>('');
-  useMemo(() => {
-    if (!isShown) {
-      return;
-    }
-    if (latestSearch === value) {
-      return;
-    }
+  useEffect(() => {
     const action = async () => {
       setLatestSearch(value);
       const { data: urls } = await ctx.collectionAPI.post<string[]>('/filter', {
@@ -29,26 +24,38 @@ export const VariablePreview = (props: IVariablePreview): JSX.Element => {
         limit: 1,
         order: 'desc',
       });
-      console.log('urls', urls);
       if (urls.length > 0) {
         setUrl(urls[0]);
       } else {
         setUrl('');
       }
     }
+    if (!props.isShown) {
+      return;
+    }
+    if (latestSearch === value) {
+      return;
+    }
     action();
-  }, [value, isShown])
+  }, [value, props.isShown])
 
-  if (!isShown) {
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      props.hide();
+    }, 20_000);
+    return () => {
+      clearTimeout(timeout);
+    }
+  }, [props.isShown])
+
+  if (!props.isShown) {
     return (<>{name}</>)
   }
-
-
   return (
     <div>
       {name}
       <div className="position-fixed top-0 end-0 p-3" style={{ zIndex: 5 }}>
-        <Toast isOpen={isShown} >
+        <Toast isOpen={props.isShown} >
           <ToastBody>
             {
               imgURL === '' ? 

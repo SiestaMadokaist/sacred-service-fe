@@ -7,12 +7,13 @@ import { VariablePreview } from "./variable-preview";
 
 export interface IVariableEditor {
   k: string;
+  v: string;
 }
 const VariableEditor = (props: IVariableEditor): JSX.Element => {
   const ctx = usePromptContext();
   assert(ctx, 'PromptContext is not defined');
 
-  const [value, setValue] = useState<string>(ctx.variables[props.k] ?? '');
+  const [value, setValue] = useState<string>(props.v ?? '');
   const [debouncedValue] = useDebounce(value, 1000);
 
   const valid = value.endsWith(',');
@@ -31,6 +32,12 @@ const VariableEditor = (props: IVariableEditor): JSX.Element => {
     setValue(newValue);
   }
 
+  useEffect(() => {
+    if (props.v !== value) {
+      setValue(props.v);
+    }
+  }, [props.v]);
+
   const autoInsert = (key: string) => {
     const index = ctx.activeIndex;
     const template0 = ctx.templates[index];
@@ -39,19 +46,18 @@ const VariableEditor = (props: IVariableEditor): JSX.Element => {
     ctx.setTemplate(index, { prompt: newTemplate });
   }
 
-  const [hovering, setHovering] = useState(false);
-  const onMouseEnter = () => {
-    setHovering(true);
+  const [showPreview, setShowPreview] = useState(false);
+
+  const onCountClicked = () => {
+    setShowPreview(!showPreview);
   }
-  const onMouseLeave = () => {
-    setHovering(false);
-  }
+
   const bgColor = !valid ? '#813' : 'white';
   return (<div className="w-100">
     <InputGroup className="mb-2 w-100">
-      <InputGroupText style={{ fontSize: '0.8em' }} >{ctx.varCounts[props.k]}x</InputGroupText>
-      <InputGroupText onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave} onClick={() => autoInsert(props.k)} style={{ fontSize: '0.8em' }} className="w-30">
-        <VariablePreview name={props.k} value={value} isShown={hovering} />
+      <InputGroupText onClick={onCountClicked} style={{ backgroundColor: '#ffc107', fontSize: '0.8em', cursor: 'pointer' }} >{ctx.varCounts[props.k]}x</InputGroupText>
+      <InputGroupText onClick={() => autoInsert(props.k)} style={{ fontSize: '0.8em' }} className="w-30">
+        <VariablePreview hide={() => setShowPreview(false)} name={props.k} value={value} isShown={showPreview} />
       </InputGroupText>
       <Input style={{ backgroundColor: bgColor }} type="text" value={value} onChange={onChange} />
     </InputGroup>
@@ -65,6 +71,6 @@ export const VariableEditors = (): JSX.Element => {
   const { variables } = ctx;
   const keys = Object.keys(variables);
   return <div className="d-flex flex-column w-100">
-    {keys.map((k) => (<VariableEditor k={k} key={k} />))}
+    {keys.map((k) => (<VariableEditor k={k} key={k} v={variables[k]} />))}
   </div>
 }

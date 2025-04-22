@@ -138,6 +138,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
     }
     setVarCounts(localVarCounts);
     _setTemplates(templates);
+    updateVariables();
   }
 
   const updateVariables = () => {
@@ -148,6 +149,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
     for (const key of sortedKeys) {
       newVars[key] = oldVars[key] ?? '??';
     }
+    console.log({ newVars, oldVars })
     setVariables(newVars);
   }
 
@@ -160,10 +162,6 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
     newTemplates.splice(after, 0, template);
     setTemplates(newTemplates);
   }
-
-  useEffect(() => {
-    updateVariables();
-  }, [templates])
 
   const setTemplate = (index: number, template: ITemplate) => {
     if (index === templates.length) {
@@ -194,9 +192,9 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
       const resp = await axios.get<{ templateId: string, templates: ITemplate[], variables: Record<string, string> }>(promptPath);
       const { data } = resp
       const vars = data.variables ?? {};
-      setVariables(vars);
       const templates = data.templates as ITemplate[];
-      setTemplates(templates);
+      _setTemplates(templates);
+      setVariables(vars);
     }
     action();
   }, [templateId])
