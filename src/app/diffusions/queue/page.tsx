@@ -16,7 +16,9 @@ export interface ITask {
   priorityScore: number;
   actionType: 'generate' | 'fetch';
   currentStatus: 'pending' | 'running' | 'completed' | 'failed' | 'canceled';
-  resourceCount: number;  
+  resourceCount: number;
+  actionId?: string;
+  progressCount?: number;
 }
 
 export interface IQueueElement {
@@ -55,19 +57,31 @@ const QueueElement = (props: IQueueElement) : JSX.Element => {
       return 'darkorange';
     }
     if (task.currentStatus === 'running') {
-      return 'lightgreen';
+      return '#2196f3'; // blueish
     }
     return 'gray';
   }
 
+  const progressed = () => {
+    if (task.progressCount === undefined || task.resourceCount === undefined) { return 0 }
+    if (task.resourceCount === 0) { return 0 }
+    return Math.floor((task.progressCount / task.resourceCount) * 100);
+  }
+  const unprocessed = 100 - progressed();
+  const bgText = `linear-gradient(to right, #4caf50 0 ${progressed()}%, white 0%)`;
+  console.log({ progressed: progressed(), unprocessed, bgText });
   return (<div className="w-100 d-flex flex-row mt-2">
     <InputGroup className="w-85">
       <InputGroupText>#</InputGroupText>
       <Input style={{ color: 'wheat', backgroundColor: 'darkmagenta'}} type="number" className="w-5" value={priorityScore} onChange={(v) => setPriorityScore(parseInt(v.target.value))}/>
       <InputGroupText className="w-20">Action Type: {task.actionType}</InputGroupText>
-      <InputGroupText className="w-5">(x{task.resourceCount ?? 0})</InputGroupText>
-      <InputGroupText className="w-40">{task.jobId}</InputGroupText>
-      <InputGroupText style={{ backgroundColor: statusColor() }} className="w-20">Status: {task.currentStatus}</InputGroupText>
+      <InputGroupText className="w-5">({task.progressCount ?? 0}/{task.resourceCount ?? 0})</InputGroupText>
+      <InputGroupText style={{
+        background: bgText,
+      }} className="w-40">{task.actionId}</InputGroupText>
+      <InputGroupText style={{ backgroundColor: statusColor() }} className="w-20">
+        Status: {task.currentStatus}
+      </InputGroupText>
     </InputGroup>
     <Button className="w-10 ml-1" color="danger" onClick={callDelete}>
       <IconTrash className="bg-transparent" size={16} />
@@ -97,13 +111,18 @@ export default function QueuePage(): JSX.Element {
     })
   }, []);
 
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+
   useEffect(() => {
     fetchQueue();
-    const interval = setInterval(fetchQueue, 15_000);
-    return () => {
-      clearInterval(interval);
-    }
-  }, [])
+  }, [lastUpdated])
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLastUpdated(new Date());
+    }, 10_000);
+    return () => clearInterval(interval);
+  }, []);
 
   const onRenew = fetchQueue;
 

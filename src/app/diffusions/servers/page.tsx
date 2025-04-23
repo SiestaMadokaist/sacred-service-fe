@@ -209,7 +209,7 @@ const ComputeManager: React.FC = () => {
                         onClick={() =>
                           triggerAction(inst.InstanceId, "stop")
                         }
-                        disabled={inst.State.Name !== "running"}
+                        // disabled={inst.State.Name !== "running"}
                       >
                         Stop
                       </Button>
