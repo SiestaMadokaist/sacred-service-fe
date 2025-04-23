@@ -26,9 +26,11 @@ const cookies = new Cookies(null, { path: '/' });
 export const EsignAPI = (env: ENV, token: string) => {
   if (env === 'development') {
     const baseURL = SYSTEM_ENV.ESIGN_API_DEV;
+    console.log(`EsignAPI: ${env} ${baseURL}`);
     return axios.create({ baseURL, headers: { 'x-api-token': token } })
   } else if (env === 'production') {
     const baseURL = SYSTEM_ENV.ESIGN_API_PROD;
+    console.log(`EsignAPI: ${env} ${baseURL}`);
     return axios.create({ baseURL, headers: { 'x-api-token': token } })
   }
   throw new Error(`Invalid environment: ${env}`);

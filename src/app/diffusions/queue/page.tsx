@@ -67,9 +67,8 @@ const QueueElement = (props: IQueueElement) : JSX.Element => {
     if (task.resourceCount === 0) { return 0 }
     return Math.floor((task.progressCount / task.resourceCount) * 100);
   }
-  const unprocessed = 100 - progressed();
+
   const bgText = `linear-gradient(to right, #4caf50 0 ${progressed()}%, white 0%)`;
-  console.log({ progressed: progressed(), unprocessed, bgText });
   return (<div className="w-100 d-flex flex-row mt-2">
     <InputGroup className="w-85">
       <InputGroupText>#</InputGroupText>
