@@ -8,6 +8,8 @@ import {
   Row,
   Col,
   Alert,
+  InputGroup,
+  InputGroupText,
 } from "reactstrap";
 import { apiHub } from "../../../api/hub";
 import { useApi } from "../../../hooks/useApi";
@@ -60,9 +62,11 @@ const ComputeManager: React.FC = () => {
     setLoading(false);
   };
 
+  const [force, setForce] = useState(false);
+
   const triggerAction = async (instanceId: string, action: string) => {
     try {
-      await computeAPI.post(`/${instanceId}/${action}`, { instanceId });
+      await computeAPI.post(`/${instanceId}/${action}`, { instanceId, force });
       await fetchInstances();
     } catch {
       setError(`Failed to ${action} instance ${instanceId}`);
@@ -126,7 +130,6 @@ const ComputeManager: React.FC = () => {
   const daysInMonth = endOfMonth.getDate();
   const daysPassedInMonth = date.getDate();
   const monthlyEstimate = parseFloat(billMTD.Amount) * (daysInMonth / daysPassedInMonth);
-
   return (
     <Container className="mt-5">
       <Row className="mb-3 justify-content-between align-items-center">
@@ -137,6 +140,14 @@ const ComputeManager: React.FC = () => {
           </h2>
         </Col>
         <Col></Col>
+      </Row>
+      <Row>
+        <Col className="">
+          <InputGroup className="w-100 mb-2">
+            <InputGroupText className="w-80">Running As:</InputGroupText>
+            <Button className="w-20" color={force ? 'danger' : 'primary'} onClick={() => setForce(!force)}>{force ? 'Immediate' : 'Queue'}</Button>
+          </InputGroup>
+        </Col>
       </Row>
 
       {error && (
