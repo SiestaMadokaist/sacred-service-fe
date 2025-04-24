@@ -130,6 +130,7 @@ const ComputeManager: React.FC = () => {
   const daysInMonth = endOfMonth.getDate();
   const daysPassedInMonth = date.getDate();
   const monthlyEstimate = parseFloat(billMTD.Amount) * (daysInMonth / daysPassedInMonth);
+
   return (
     <Container className="mt-5">
       <Row className="mb-3 justify-content-between align-items-center">
@@ -141,15 +142,6 @@ const ComputeManager: React.FC = () => {
         </Col>
         <Col></Col>
       </Row>
-      <Row>
-        <Col className="">
-          <InputGroup className="w-100 mb-2">
-            <InputGroupText className="w-80">Running As:</InputGroupText>
-            <Button className="w-20" color={force ? 'danger' : 'primary'} onClick={() => setForce(!force)}>{force ? 'Immediate' : 'Queue'}</Button>
-          </InputGroup>
-        </Col>
-      </Row>
-
       {error && (
         <Row>
           <Col>
@@ -181,8 +173,7 @@ const ComputeManager: React.FC = () => {
                   />
                 </Col>
               </Row>
-          )}
-
+            )}
           {instances.length > 0 && (
             <Table striped responsive>
               <thead>
@@ -191,7 +182,10 @@ const ComputeManager: React.FC = () => {
                   <th>State</th>
                   <th>Type</th>
                   <th>Launch Time</th>
-                  <th>Actions</th>
+                    <th onClick={() => setForce(!force)} className="d-flex flex-row" style={{ cursor: "pointer", color: force ? '#dc3545' : 'black' }}>
+                      <div>Actions:</div>
+                      <div className="w-40 ml-2">{force ? 'Immediate' : 'Queue'}</div>
+                    </th>
                 </tr>
               </thead>
               <tbody>
