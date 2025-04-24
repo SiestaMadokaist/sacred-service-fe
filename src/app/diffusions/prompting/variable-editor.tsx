@@ -70,7 +70,6 @@ export const VariableEditors = (): JSX.Element => {
   assert(ctx, 'PromptContext is not defined');
   const { variables } = ctx;
   const keys = Object.keys(variables);
-  console.log({ variables })
   return <div className="d-flex flex-column w-100">
     {keys.map((k) => (<VariableEditor k={k} key={k} v={variables[k]} />))}
   </div>

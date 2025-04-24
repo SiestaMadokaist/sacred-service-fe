@@ -30,7 +30,7 @@ export const Showcase = (props: IShowcase): JSX.Element => {
   const [lastUpdated, setLastUpdated] = useState(0);
   const [reports, setReports] = useState<IReport[]>([]);
   const [index, setIndex] = useState(0);
-  const lastReport = reports[reports.length - 1] ?? {
+  const lastReport = reports[0] ?? {
     url: '',
     createdAt: 0,
   };
@@ -104,7 +104,7 @@ export const Showcase = (props: IShowcase): JSX.Element => {
       return;
     }
     const { collectionAPI } = props;
-    const path = imgURL.replace(SYSTEM_ENV.IMAGE_PREFIX + '/', '');
+    const path = imgURL.split("/").slice(4).join("/");
     const response = await collectionAPI.post(`/get-meta`, {
       path,
     });
@@ -131,7 +131,6 @@ export const Showcase = (props: IShowcase): JSX.Element => {
   }
 
   const report = reports[index];
-  console.log({ report, index, reports });
 
   const closeButton = () => {
     setShow(false);

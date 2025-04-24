@@ -26,7 +26,6 @@ export function DMGTracker(props: IDamageTrackerProps): JSX.Element {
       enemy.emitter().removeListener('inflict', onDamage);
     }
   })
-  console.log(enemy);
   return (<div className='m-1'>
     <InputGroup>
       <Button disabled={props.viewMode} className='w-20' color={enemy.multiplierColor(props.viewMode)} onClick={onMultiplier}>{enemy.multiplierLevel(props.viewMode)}</Button>

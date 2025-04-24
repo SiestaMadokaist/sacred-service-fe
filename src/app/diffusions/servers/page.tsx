@@ -184,7 +184,8 @@ const ComputeManager: React.FC = () => {
                   <th>Launch Time</th>
                     <th onClick={() => setForce(!force)} className="d-flex flex-row" style={{ cursor: "pointer", color: force ? '#dc3545' : 'black' }}>
                       <div>Actions:</div>
-                      <div className="w-40 ml-2">{force ? 'Immediate' : 'Queue'}</div>
+                      <div className="ml-2">{force ? 'Immediate' : 'Queued'}</div>
+                      <div className="ml-4"><s>{force ? 'Queued' : 'Immediate'}</s></div>
                     </th>
                 </tr>
               </thead>
