@@ -111,9 +111,10 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
       seed: -1,
       n_iter: nIter,
     }));
+    const actionId = buildPrompt(templateId);
     const params = {
-      jobId: `${templateId}-${Date.now()}`,
-      actionId: buildPrompt(templateId),
+      jobId: `${actionId}-${Date.now()}`,
+      actionId,
       resource: prompts,
     }
     await promptAPI.post('/queue', params);
@@ -204,7 +205,12 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
 
 
   const buildPrompt = (template: string): string => {
-    const prompts = template.replace(/{(.*?)}/g, (_, p1) => {
+    const prompts = template.replace(/<(.*?)>/g, (_, p1) => {
+      const key = p1.trim();
+      const value = variables[key];
+      const name = value ?? `${key}`;
+      return name.split(',').map((v) => v.trim())[0];
+    }).replace(/{(.*?)}/g, (_, p1) => {
       const key = p1.trim();
       const value = variables[key];
       return value ?? `{${key}}`;
