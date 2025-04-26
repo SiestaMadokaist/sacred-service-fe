@@ -145,18 +145,18 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
   return (<div className="d-flex w-100 flex-wrap">
     <Row className="mt-2 d-flex flex-wrap w-100" style={{ borderBottom: '2px solid #2c3e3f', paddingBottom: '0.5rem' }}>
       <Col>
-        <p onClick={addTemplate} style={{ cursor: 'pointer', textAlign: 'center' }} className="w-100 color-white">{props.index + 1}</p>
-        <pre>
-          <PromptViewer prompt={ctx.buildPrompt(localTemplate)} />
-        </pre>
-      </Col>
-      <Col>
         <Input style={{ fontFamily: 'monospace', fontSize: '0.875rem', ...colorProperties }} className="h-80" type="textarea" value={localTemplate} onChange={(e) => setLocalTemplate(e.target.value)} />
         <Button onClick={fuzzySearch} style={{ color: 'yellow' }} className="mt-2 w-100" color="success">Fuzzy Preview</Button>
       </Col>
       <Col onClick={() => console.log('test')} sm="2" className="d-flex flex-wrap justify-content-center align-items-center">
         <ImageUrlDropzone onUrlDrop={(imageURL) => setControlnetImage(imageURL)} />
         <Button style={{ maxHeight: '40px' }} className="w-100 h-50 mt-2" color="primary" onClick={pushQueue}>Try</Button>
+      </Col>
+      <Col>
+        <p onClick={addTemplate} style={{ cursor: 'pointer', textAlign: 'center' }} className="w-100 color-white">{props.index + 1}</p>
+        <pre>
+          <PromptViewer prompt={ctx.buildPrompt(localTemplate)} />
+        </pre>
       </Col>
     </Row>
   </div>

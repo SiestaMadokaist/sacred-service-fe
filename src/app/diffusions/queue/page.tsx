@@ -10,6 +10,7 @@ import { useToast } from "../../../hooks/useToast";
 import { SYSTEM_ENV } from "../../../helper/env";
 import { Showcase } from "../../../components/showcase";
 import { EventEmitter } from "stream";
+import { useTitle } from "../../../hooks/useTitle";
 
 export interface ITask {
   jobId: string;
@@ -69,15 +70,16 @@ const QueueElement = (props: IQueueElement) : JSX.Element => {
   }
 
   const bgText = `linear-gradient(to right, #4caf50 0 ${progressed()}%, white 0%)`;
+  useTitle("🕒 Queue Page");
   return (<div className="w-100 d-flex flex-row mt-2">
     <InputGroup className="w-85">
       <InputGroupText>#</InputGroupText>
       <Input style={{ color: 'wheat', backgroundColor: 'darkmagenta'}} type="number" className="w-5" value={priorityScore} onChange={(v) => setPriorityScore(parseInt(v.target.value))}/>
       <InputGroupText className="w-20">Action Type: {task.actionType}</InputGroupText>
-      <InputGroupText className="w-5">({task.progressCount ?? 0}/{task.resourceCount ?? 0})</InputGroupText>
+      <InputGroupText className="w-10">({task.progressCount ?? 0}/{task.resourceCount ?? 0})</InputGroupText>
       <InputGroupText style={{
         background: bgText,
-      }} className="w-40">{task.actionId}</InputGroupText>
+      }} className="w-35">{task.actionId}</InputGroupText>
       <InputGroupText style={{ backgroundColor: statusColor() }} className="w-20">
         Status: {task.currentStatus}
       </InputGroupText>

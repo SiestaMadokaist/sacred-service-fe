@@ -113,7 +113,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
     }));
     const params = {
       jobId: `${templateId}-${Date.now()}`,
-      actionId: `${templateId}`,
+      actionId: buildPrompt(templateId),
       resource: prompts,
     }
     await promptAPI.post('/queue', params);
