@@ -6,6 +6,7 @@ const systemENV = {
   OSS_API: process.env.NEXT_PUBLIC_OSS_API,
   PROMPT_PREFIX: process.env.NEXT_PUBLIC_PROMPT_PREFIX,
   IMAGE_PREFIX: process.env.NEXT_PUBLIC_IMAGE_PREFIX,
+  WS_ENDPOINT: process.env.NEXT_PUBLIC_WS_ENDPOINT,
 }
 
 type keys = keyof typeof systemENV;

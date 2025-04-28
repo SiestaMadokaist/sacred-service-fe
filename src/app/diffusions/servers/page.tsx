@@ -27,6 +27,15 @@ interface ICheckpoint {
   minSize: number;
 }
 
+interface IBill {
+  Estimated: boolean;
+  Groups: [];
+  TimePeriod: { Start: string; End: string };
+  Total: {
+    UnblendedCost: { Amount: string; Unit: string };
+  }
+}
+
 const ComputeManager: React.FC = () => {
   const [instances, setInstances] = useState<EC2Instance[]>([]);
   const [checkpoints, setCheckpoints] = useState<ICheckpoint[]>([]);
@@ -91,32 +100,12 @@ const ComputeManager: React.FC = () => {
     }
   };
 
-  const [billMTD, setBillMTD] = useState<{
-    Start: string;
-    End: string;
-    Amount: string;
-    Unit: string;
-  }>({
-    Start: "",
-    End: "",
-    Amount: "",
-    Unit: "",
-  });
+
+  const [dailyBills, setDailyBills] = useState<IBill[]>([]);
 
   const fetchBill = async () => {
     const resp = await computeAPI.get("/bill");
-    const [{
-      TimePeriod: { Start, End },
-      Total: {
-        UnblendedCost: { Amount, Unit },
-      },
-    }] = resp.data;
-    setBillMTD({
-      Start,
-      End,
-      Amount,
-      Unit,
-    })
+    setDailyBills(resp.data);
   }
 
   useEffect(() => {
@@ -129,7 +118,19 @@ const ComputeManager: React.FC = () => {
   const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
   const daysInMonth = endOfMonth.getDate();
   const daysPassedInMonth = date.getDate();
-  const monthlyEstimate = parseFloat(billMTD.Amount) * (daysInMonth / daysPassedInMonth);
+  const billMTD: number = (() => {
+    const amounts = dailyBills
+      .map((x) => x.Total.UnblendedCost.Amount)
+      .map((x) => parseFloat(x))
+    return amounts.reduce((acc, val) => acc + val, 0);
+  })();
+  const maxDailyBill = (() => {
+    const amounts = dailyBills
+      .map((x) => x.Total.UnblendedCost.Amount)
+      .map((x) => parseFloat(x))
+    return Math.max(...amounts);
+  })();
+  const monthlyEstimate = billMTD * (daysInMonth / daysPassedInMonth);
 
   return (
     <Container className="mt-5">
@@ -137,11 +138,18 @@ const ComputeManager: React.FC = () => {
         <Col>
           <h2 style={{ "color": "#66CCFF " }}>Sacred Secret Service</h2>
           <h2 style={{ "color": "#66CCFF " }}>
-            {parseFloat(billMTD.Amount).toFixed(3)} {billMTD.Unit} / {monthlyEstimate.toFixed(3)} {billMTD.Unit}
+            {billMTD.toFixed(3)} USD / {monthlyEstimate.toFixed(3)} USD
           </h2>
         </Col>
         <Col></Col>
       </Row>
+      <div style={{ borderBottom: '1px #146c43 dotted' }} className="d-flex mb-2">
+        {dailyBills.map((x) => (<Col key={x.TimePeriod.Start}>
+          <div className="color-white">
+            {parseFloat(x.Total.UnblendedCost.Amount).toFixed(2)}
+          </div>
+        </Col>))}
+      </div>
       {error && (
         <Row>
           <Col>

@@ -249,7 +249,6 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
       showToast
     }}>
       {toastElement}
-      <Showcase collectionAPI={collectionAPI} hub={showHub} fetchInterval={10_000} duration={10_000} refURL={`${SYSTEM_ENV.IMAGE_PREFIX}/public/latest.json`} />
       {props.children}
     </PromptContext.Provider>
   )

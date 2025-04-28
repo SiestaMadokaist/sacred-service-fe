@@ -1,12 +1,14 @@
 "use client";
+import { Showcase } from "../../../components/showcase";
 import { useTitle } from "../../../hooks/useTitle";
-import { PromptProvider } from "./context";
+import { PromptProvider, usePromptContext } from "./context";
 import { TemplateEditors } from "./template-editors";
 import { TemplateInverter } from "./template-inverter";
 import { TemplateSelector } from "./template-selector";
 import { VariableEditors } from "./variable-editor";
 
 function InnerPage(): JSX.Element {
+  const ctx = usePromptContext();
   return (<div className="d-flex flex-wrap w-100 mt-2 justify-content-center">
     <div className="w-70">
       <TemplateSelector />
@@ -16,11 +18,11 @@ function InnerPage(): JSX.Element {
     </div>
     <div className="w-1" />
     <div className="w-25 d-flex flex-wrap">
-      <div style={{ overflow: 'auto', scrollbarWidth: 'none' }} className="w-100 h-30vh">
-        <TemplateInverter />
-      </div>
-      <div style={{ scrollbarWidth: 'none' }} className="w-100 h-62vh d-flex flex-wrap mt-2 overflow-auto">
+      <div style={{ scrollbarWidth: 'none' }} className="w-100 h-40vh d-flex flex-wrap mt-2 overflow-auto">
         <VariableEditors />
+      </div>
+      <div className="w-100 h-55vh">
+        <Showcase collectionAPI={ctx.collectionAPI} />
       </div>
     </div>
   </div>)
