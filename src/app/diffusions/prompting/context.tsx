@@ -100,21 +100,24 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
   const [nIter, setNIter] = useState<number>(1);
 
   const pushQueue = async (ts: ITemplate[]) => {
-    const prompts: IGeneratePortrait[] = ts.map((x) => ({
+    const prompts: Partial<IGeneratePortrait>[] = ts.map((x) => ({
       prompt: buildPrompt(x.prompt),
       controlnet: x.controlnet ?? {},
+      n_iter: nIter,
+    }));
+    const defaultConfig = {
       negative_prompt: negativePrompt,
       width: 1000,
       height: 1200,
       steps: 20,
       sampler_name: 'DPM++ 2M Karras',
       seed: -1,
-      n_iter: nIter,
-    }));
+    };
     const actionId = buildPrompt(templateId);
     const params = {
       jobId: `${actionId}-${Date.now()}`,
       actionId,
+      defaultConfig,
       resource: prompts,
     }
     await promptAPI.post('/queue', params);

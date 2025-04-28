@@ -131,13 +131,15 @@ export default function QueuePage(): JSX.Element {
   const [showHub, _] = useState<ShowHub>(initShowHub());
   return (
     <div className="w-100 h-100vh d-flex flex-wrap justify-content-center">
-      <Showcase collectionAPI={collectionAPI} hub={showHub} fetchInterval={10_000} duration={10_000} refURL={`${SYSTEM_ENV.IMAGE_PREFIX}/public/latest.json`} />
       {toastElement}
       <div className="w-90 color-white mt-2 d-flex flex-row justify-content-center align-items-center">
         <h4>Queue Manager</h4>
       </div>
       <div className="w-90">
         {queueData.map((x, i) => (<QueueElement renew={onRenew} promptAPI={promptAPI} key={`queue-${i}`} task={x} />))}
+      </div>
+      <div>
+        <Showcase collectionAPI={collectionAPI} />
       </div>
     </div>
   )
