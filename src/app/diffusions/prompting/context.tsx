@@ -111,7 +111,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
       height: 1200,
       steps: 20,
       sampler_name: 'DPM++ 2M Karras',
-      seed: -1,
+      seed: Math.floor(Math.random() * 10_000_000),
     };
     const actionId = buildPrompt(templateId);
     const params = {
@@ -211,7 +211,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
     const prompts = template.replace(/<(.*?)>/g, (_, p1) => {
       const key = p1.trim();
       const value = variables[key];
-      const name = value ?? `${key}`;
+      const name = value ?? `<${key}>`;
       return name.split(',').map((v) => v.trim())[0];
     }).replace(/{(.*?)}/g, (_, p1) => {
       const key = p1.trim();

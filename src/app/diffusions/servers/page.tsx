@@ -124,12 +124,6 @@ const ComputeManager: React.FC = () => {
       .map((x) => parseFloat(x))
     return amounts.reduce((acc, val) => acc + val, 0);
   })();
-  const maxDailyBill = (() => {
-    const amounts = dailyBills
-      .map((x) => x.Total.UnblendedCost.Amount)
-      .map((x) => parseFloat(x))
-    return Math.max(...amounts);
-  })();
   const monthlyEstimate = billMTD * (daysInMonth / daysPassedInMonth);
 
   return (
