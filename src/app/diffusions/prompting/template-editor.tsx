@@ -121,11 +121,12 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
 
   const pushQueue = async () => {
     const ref = ctx.templates[props.index];
-    const updated = {
+    const updated: ITemplate = {
       ...ref,
-      template: localTemplate,
+      nIter: 1,
+      seed: -1,
     }
-    const prompts: ITemplate[] = [updated];
+    const prompts: ITemplate[] = [...new Array(ctx.nIter)].map((x) => (updated))
     await ctx.pushQueue(prompts);
   }
 

@@ -39,6 +39,8 @@ export interface IGenerateLandscape {
 
 export interface ITemplate {
   prompt: string;
+  nIter?: number;
+  seed?: number;
   controlnet?: {
     source: string;
     module: "canny";
@@ -55,8 +57,10 @@ interface IPromptingContext {
   promptPrefix: string;
   activeIndex: number;
   nIter: number;
+  stepCount: number;
   showImage: (imgURL: string) => void;
   setNIter: (nIter: number) => void;
+  setStepCount: (stepCount: number) => void;
   setVariables: (variables: Record<string, string>) => void;
   getPrompts: () => string;
   buildPrompt: (template: string) => string;
@@ -98,18 +102,20 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
   const [templateId, setTemplateId] = useState<string>('');
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const [nIter, setNIter] = useState<number>(1);
+  const [stepCount, setStepCount] = useState<number>(20);
 
   const pushQueue = async (ts: ITemplate[]) => {
     const prompts: Partial<IGeneratePortrait>[] = ts.map((x) => ({
       prompt: buildPrompt(x.prompt),
       controlnet: x.controlnet ?? {},
-      n_iter: nIter,
+      n_iter: x.nIter ?? nIter,
+      seed: x.seed ?? Math.floor(Math.random() * 10_000_000),
     }));
     const defaultConfig = {
       negative_prompt: negativePrompt,
       width: 1000,
       height: 1200,
-      steps: 20,
+      steps: stepCount,
       sampler_name: 'DPM++ 2M Karras',
       seed: Math.floor(Math.random() * 10_000_000),
     };
@@ -233,7 +239,9 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
         showHub.emit('show', imgURL);
       },
       varCounts,
+      stepCount,
       nIter,
+      setStepCount,
       setNIter,
       promptPrefix: PROMPT_PREFIX,
       activeIndex,
