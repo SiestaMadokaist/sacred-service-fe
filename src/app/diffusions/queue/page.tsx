@@ -73,16 +73,15 @@ const QueueElement = (props: IQueueElement) : JSX.Element => {
   const bgText = `linear-gradient(to right, #4caf50 0 ${progressed()}%, white 0%)`;
   useTitle("🕒 Queue Page");
   return (<div className="w-100 d-flex flex-row mt-2">
-    <InputGroup className="w-85">
-      <InputGroupText>#</InputGroupText>
-      <Input style={{ color: 'wheat', backgroundColor: 'darkmagenta'}} type="number" className="w-5" value={priorityScore} onChange={(v) => setPriorityScore(parseInt(v.target.value))}/>
-      <InputGroupText className="w-20">Action Type: {task.actionType}</InputGroupText>
-      <InputGroupText className="w-10">({task.progressCount ?? 0}/{task.resourceCount ?? 0})</InputGroupText>
+    <InputGroup className="w-100">
+      <Input style={{ color: 'wheat', backgroundColor: 'darkmagenta' }} type="number" value={priorityScore} onChange={(v) => setPriorityScore(parseInt(v.target.value))} />
+      <InputGroupText >{task.actionType}</InputGroupText>
+      <InputGroupText >({task.progressCount ?? 0}/{task.resourceCount ?? 0})</InputGroupText>
       <InputGroupText style={{
         background: bgText,
-      }} className="w-35">{task.actionId}</InputGroupText>
+      }} >{task.actionId}</InputGroupText>
       <InputGroupText style={{ backgroundColor: statusColor() }} className="w-20">
-        Status: {task.currentStatus}
+        {task.currentStatus}
       </InputGroupText>
     </InputGroup>
     <Button className="w-10 ml-1" color="danger" onClick={callDelete}>
@@ -135,10 +134,12 @@ export default function QueuePage(): JSX.Element {
       <div className="w-90 color-white mt-2 d-flex flex-row justify-content-center align-items-center">
         <h4>Queue Manager</h4>
       </div>
-      <div className="w-90">
-        {queueData.map((x, i) => (<QueueElement renew={onRenew} promptAPI={promptAPI} key={`queue-${i}`} task={x} />))}
+      <div className="w-50">
+        <div className="w-90 ml-5">
+          {queueData.map((x, i) => (<QueueElement renew={onRenew} promptAPI={promptAPI} key={`queue-${i}`} task={x} />))}
+        </div>        
       </div>
-      <div>
+      <div className="w-50" style={{ maxHeight: '90vh', overflowY: 'auto', zIndex: 6 }}>
         <Showcase collectionAPI={collectionAPI} />
       </div>
     </div>
