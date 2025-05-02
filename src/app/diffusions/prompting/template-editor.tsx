@@ -3,6 +3,7 @@ import { ITemplate, usePromptContext } from "./context";
 import { Button, Col, Input, Label, Row } from "reactstrap";
 import { useDebounce } from "use-debounce";
 import { ImageUrlDropzone } from "../../../components/DragNDrop/ImageURLDropzone";
+import { IconSquare } from "@tabler/icons-react";
 
 export interface ITemplateEditor {
   index: number;
@@ -35,6 +36,12 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
   const ctx = usePromptContext();
   const [localTemplate, setLocalTemplate] = useState<string>(props.template.prompt);
   const [debouncedTemplate] = useDebounce(localTemplate, 1000);
+  const [orientation, setOrientation] = useState<'portrait' | 'landscape'>(props.template.orientation ?? 'portrait');
+
+  useEffect(() => {
+    setOrientation(props.template.orientation ?? 'portrait');
+  }, [ctx.templateId])
+
   const valueLeak = (t: string, vars: Record<string, string>): [string, string] | [null, null] => {
     const keys = Object.keys(vars);
     for (const key of keys) {
@@ -109,20 +116,33 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
       return;
     }
     setValid(true);
-    ctx.setTemplate(props.index, { prompt: debouncedTemplate });
+    ctx.setTemplate(props.index, { prompt: debouncedTemplate, ...resolution(), orientation, });
   }, [debouncedTemplate])
 
   const addTemplate = () => {
     const newTemplate: ITemplate = {
       prompt: localTemplate,
+      orientation,
+      ...resolution(),
     }
     ctx.addTemplate(props.index + 1, newTemplate);
+  }
+
+  const resolution = ($o?: (typeof orientation)) => {
+    const o = $o ?? orientation;
+    if (o === 'landscape') {
+      return { width: 1200, height: 1000 };
+    } else if (o === 'portrait') {
+      return { width: 1000, height: 1200 };
+    }
+    return { width: 1000, height: 1200 };
   }
 
   const pushQueue = async () => {
     const ref = ctx.templates[props.index];
     const updated: ITemplate = {
       ...ref,
+      prompt: localTemplate,
       nIter: 1,
       seed: -1,
     }
@@ -143,18 +163,35 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
     }
   }
 
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && e.ctrlKey) {
+      e.preventDefault();
+      pushQueue();
+    }
+  }
+
+  const onClick = (o: typeof orientation) => {
+    return (e: React.MouseEvent) => {
+      setOrientation(o);
+      ctx.setTemplate(props.index, { ...ctx.templates[props.index], orientation, ...resolution(o) });
+    }
+  }
+
   return (<div className="d-flex w-100 flex-wrap">
     <Row className="mt-2 d-flex flex-wrap w-100" style={{ borderBottom: '2px solid #2c3e3f', paddingBottom: '0.5rem' }}>
       <Col>
-        <Input style={{ fontFamily: 'monospace', fontSize: '0.875rem', ...colorProperties }} className="h-80" type="textarea" value={localTemplate} onChange={(e) => setLocalTemplate(e.target.value)} />
+        <Input onKeyDown={onKeyDown} style={{ fontFamily: 'monospace', fontSize: '0.875rem', ...colorProperties }} className="h-80" type="textarea" value={localTemplate} onChange={(e) => setLocalTemplate(e.target.value)} />
         <Button onClick={fuzzySearch} style={{ color: 'yellow' }} className="mt-2 w-100" color="success">Fuzzy Preview</Button>
       </Col>
-      <Col onClick={() => console.log('test')} sm="2" className="d-flex flex-wrap justify-content-center align-items-center">
+      <Col sm="2" className="d-flex flex-wrap justify-content-center align-items-center">
         <ImageUrlDropzone onUrlDrop={(imageURL) => setControlnetImage(imageURL)} />
-        <Button style={{ maxHeight: '40px' }} className="w-100 h-50 mt-2" color="primary" onClick={pushQueue}>Try</Button>
+        <div style={{ cursor: 'pointer' }} className="d-flex bg-white w-100 justify-content-center align-items-center flex-row h-10">
+          <Button onClick={onClick('portrait')} disabled={orientation === 'portrait'} color="primary" style={{ fontSize: '0.8em' }} className="w-40">P</Button>
+          <Button onClick={onClick('landscape')} disabled={orientation === 'landscape'} color="primary" style={{ fontSize: '0.8em' }} className="w-40 ml-2">L</Button>
+        </div>
       </Col>
       <Col>
-        <p onClick={addTemplate} style={{ cursor: 'pointer', textAlign: 'center' }} className="w-100 color-white">{props.index + 1}</p>
+        <p onClick={addTemplate} style={{ cursor: 'pointer', textAlign: 'center' }} className="w-100 color-white">{props.index + 1} : {orientation.toUpperCase()}</p>
         <pre>
           <PromptViewer prompt={ctx.buildPrompt(localTemplate)} />
         </pre>

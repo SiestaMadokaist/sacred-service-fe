@@ -38,6 +38,7 @@ export interface IGenerateLandscape {
 }
 
 export interface ITemplate {
+  orientation?: "landscape" | "portrait";
   prompt: string;
   nIter?: number;
   seed?: number;
@@ -106,6 +107,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
 
   const pushQueue = async (ts: ITemplate[]) => {
     const prompts: Partial<IGeneratePortrait>[] = ts.map((x) => ({
+      ...x,
       prompt: buildPrompt(x.prompt),
       controlnet: x.controlnet ?? {},
       n_iter: x.nIter ?? nIter,
