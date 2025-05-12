@@ -142,7 +142,7 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
     const ref = ctx.templates[props.index];
     const updated: ITemplate = {
       ...ref,
-      prompt: `${localTemplate}\n(experimental):(0.001)`,
+      prompt: `(experimental):(0.001)\n${localTemplate}`,
       nIter: 1,
       seed: -1,
     }
