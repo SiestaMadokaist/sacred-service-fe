@@ -142,7 +142,7 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
     const ref = ctx.templates[props.index];
     const updated: ITemplate = {
       ...ref,
-      prompt: localTemplate,
+      prompt: `${localTemplate}\n(experimental):(0.001)`,
       nIter: 1,
       seed: -1,
     }
@@ -150,18 +150,18 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
     await ctx.pushQueue(prompts);
   }
 
-  const fuzzySearch = async () => {
-    const prompt = ctx.buildPrompt(localTemplate);
-    const qualifier = ctx.variables['qualifier'] ?? '';
-    const promptWithoutQualifier = prompt.replace(qualifier, '');
-    const cleanedPrompts = promptWithoutQualifier.replace(/[\n\r]/g, ' ').replace(/\s+/g, ' ');
-    const resp = await ctx.collectionAPI.post('/fuzzy-filter', {
-      tags: cleanedPrompts.split(',').map((x) => x.trim()),
-    });
-    if (resp.data.length > 0) {
-      ctx.showImage(resp.data[0])
-    }
-  }
+  // const fuzzySearch = async () => {
+  //   const prompt = ctx.buildPrompt(localTemplate);
+  //   const qualifier = ctx.variables['qualifier'] ?? '';
+  //   const promptWithoutQualifier = prompt.replace(qualifier, '');
+  //   const cleanedPrompts = promptWithoutQualifier.replace(/[\n\r]/g, ' ').replace(/\s+/g, ' ');
+  //   const resp = await ctx.collectionAPI.post('/fuzzy-filter', {
+  //     tags: cleanedPrompts.split(',').map((x) => x.trim()),
+  //   });
+  //   if (resp.data.length > 0) {
+  //     ctx.showImage(resp.data[0])
+  //   }
+  // }
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && e.ctrlKey) {
@@ -181,7 +181,7 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
     <Row className="mt-2 d-flex flex-wrap w-100" style={{ borderBottom: '2px solid #2c3e3f', paddingBottom: '0.5rem' }}>
       <Col>
         <Input onKeyDown={onKeyDown} style={{ fontFamily: 'monospace', fontSize: '0.875rem', ...colorProperties }} className="h-80" type="textarea" value={localTemplate} onChange={(e) => setLocalTemplate(e.target.value)} />
-        <Button onClick={fuzzySearch} style={{ color: 'yellow' }} className="mt-2 w-100" color="success">Fuzzy Preview</Button>
+        <Button onClick={pushQueue} style={{ color: 'yellow' }} className="mt-2 w-100" color="success">Queue Single</Button>
       </Col>
       <Col sm="2" className="d-flex flex-wrap justify-content-center align-items-center">
         <ImageUrlDropzone onUrlDrop={(imageURL) => setControlnetImage(imageURL)} />

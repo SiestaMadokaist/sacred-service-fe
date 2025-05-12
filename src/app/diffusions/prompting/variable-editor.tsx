@@ -59,7 +59,7 @@ const VariableEditor = (props: IVariableEditor): JSX.Element => {
       <InputGroupText onClick={() => autoInsert(props.k)} style={{ fontSize: '0.8em' }} className="w-30">
         <VariablePreview hide={() => setShowPreview(false)} name={props.k} value={value} isShown={showPreview} />
       </InputGroupText>
-      <Input style={{ backgroundColor: bgColor }} type="text" value={value} onChange={onChange} />
+      <Input style={{ backgroundColor: bgColor, color: valid ? 'black' : 'white' }} type="text" value={value} onChange={onChange} />
     </InputGroup>
   </div>)
 

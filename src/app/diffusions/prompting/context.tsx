@@ -88,7 +88,7 @@ interface IPromptProvider {
 const negativePrompt = `lowres, worst aesthetic, bad quality, worst quality, bad anatomy, jpeg artifacts, scan artifacts, 
 lossy-lossless, unfinished, ugly, poorly drawn, greyscale, 
 (illustration, 2d, 2.5D, 3d, painting \(medium\), toon \(style\), sketch, comic, anime,flat color,outline,smooth skin:1.2) 
-watermark, text, extra digits, female face out of frame`;
+watermark, text, extra digits, female face out of frame, blood`;
 
 export function PromptProvider(props: IPromptProvider): JSX.Element {
   const [hub] = useState(apiHub());
@@ -109,6 +109,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
     const prompts: Partial<IGeneratePortrait>[] = ts.map((x) => ({
       ...x,
       prompt: buildPrompt(x.prompt),
+      negative_prompt: buildPrompt(x.prompt, { negative: true }) + " " + negativePrompt,
       controlnet: x.controlnet ?? {},
       n_iter: x.nIter ?? nIter,
       seed: x.seed ?? Math.floor(Math.random() * 10_000_000),
@@ -215,8 +216,10 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
   }, [templateId])
 
 
-  const buildPrompt = (template: string): string => {
-    const prompts = template.replace(/<(.*?)>/g, (_, p1) => {
+  const buildPrompt = (template: string, args: { negative: boolean } = { negative: false }): string => {
+    const [tPos, tNeg] = template.split('---');
+    const t = args?.negative ? (tNeg ?? '') : tPos;
+    const prompts = t.replace(/<(.*?)>/g, (_, p1) => {
       const key = p1.trim();
       const value = variables[key];
       const name = value ?? `<${key}>`;
@@ -231,7 +234,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
   const [showHub, _] = useState<ShowHub>(initShowHub());
 
   const getPrompts = (): string => {
-    return templates.map((x) => x.prompt).map(buildPrompt).join('\n\n');
+    return templates.map((x) => x.prompt).map((x) => buildPrompt(x)).join('\n\n');
   }
   return (
     <PromptContext.Provider value={{
