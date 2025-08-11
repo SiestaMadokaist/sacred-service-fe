@@ -7,12 +7,38 @@ import { SYSTEM_ENV } from "../../../helper/env";
 import { EventEmitter } from "stream";
 import { Showcase } from "../../../components/showcase";
 
+type RATIO = `${number}${string|","}${number}`
+interface IRegionalPrompterArgs {
+  args: [
+      true, // active
+      false, // debug
+      "Matrix" | "Mask" | "Prompt",
+      "Horizontal" | "Vertical" | "Columns" | "Rows",
+      "Mask",
+      "Prompt" | "Prompt-Ex",
+      RATIO,
+      "", // base ratio,
+      false, // use base
+      true, // use common
+      boolean, // use neg-common
+      "Attention" | "Latent", // prefer Attention,
+      boolean, // change AND and BREAK
+      "0", // lora text encoder (?)
+      "0", // lora u-net
+      "0",  // threshold
+      "", // mask ?
+      // "0", // lora stop step
+      // "0", // lora hires stop step
+      // false // flip 
+  ]
+}
+
+// interface IControlnet {
+//     model: "illustriousXLCanny_v10 [40f566e5]";
+//     module: "canny";
+//     source: string;
+// }
 export interface IGeneratePortrait {
-  controlnet: {
-    model: "illustriousXLCanny_v10 [40f566e5]";
-    module: "canny";
-    source: string;
-  } | {};
   negative_prompt: string;
   prompt: string;
   sampler_name: "DPM++ 2M Karras";
@@ -20,6 +46,11 @@ export interface IGeneratePortrait {
   steps: 20 | 25 | 30;
   height: 1200;
   width: 1000;
+  alwayson_scripts?: {
+    controlnet?: ITemplate['controlnet'];
+    "Regional Prompter"?: IRegionalPrompterArgs;
+  }
+
 }
 
 export interface IGenerateLandscape {
@@ -35,6 +66,10 @@ export interface IGenerateLandscape {
   steps: 20 | 25 | 30;
   height: 1000;
   width: 1200;
+  alwayson_scripts?: {
+    controlnet?: ITemplate['controlnet'];
+    "Regional Prompter"?: IRegionalPrompterArgs;
+  }
 }
 
 export interface ITemplate {
@@ -45,7 +80,7 @@ export interface ITemplate {
   controlnet?: {
     source: string;
     module: "canny";
-    model: "illustriousXLCanny_v10 [40f566e5]",
+    model: "canny-il [a74daa41]",
   }
   size?: {
     width: number;
@@ -61,6 +96,8 @@ interface IPromptingContext {
   stepCount: number;
   showImage: (imgURL: string) => void;
   setNIter: (nIter: number) => void;
+  setSeed: (seed: number) => void;
+  seed: number;
   setStepCount: (stepCount: number) => void;
   setVariables: (variables: Record<string, string>) => void;
   getPrompts: () => string;
@@ -87,8 +124,7 @@ interface IPromptProvider {
 
 const negativePrompt = `lowres, worst aesthetic, bad quality, worst quality, bad anatomy, jpeg artifacts, scan artifacts, 
 lossy-lossless, unfinished, ugly, poorly drawn, greyscale, 
-(illustration, 2d, 2.5D, 3d, painting \(medium\), toon \(style\), sketch, comic, anime,flat color,outline,smooth skin:1.2) 
-watermark, text, extra digits, female face out of frame, blood`;
+watermark, text, extra digits, extra finger, blood`;
 
 export function PromptProvider(props: IPromptProvider): JSX.Element {
   const [hub] = useState(apiHub());
@@ -103,24 +139,54 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
   const [templateId, setTemplateId] = useState<string>('');
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const [nIter, setNIter] = useState<number>(1);
-  const [stepCount, setStepCount] = useState<number>(20);
+  const [stepCount, setStepCount] = useState<number>(30);
 
+  const buildAlwaysOnScripts = (controlnet?: ITemplate['controlnet'], regPrompt?: IRegionalPrompterArgs): undefined | { controlnet?: ITemplate['controlnet'], "Regional Prompter"?: IRegionalPrompterArgs } => {
+    if (controlnet && regPrompt) {
+      return {
+        controlnet, 
+        "Regional Prompter": regPrompt
+      }
+    } else if (controlnet) {
+      return { controlnet }
+    } else if (regPrompt) {
+      return { "Regional Prompter": regPrompt }
+    } else {
+      return undefined;
+    }
+  }
   const pushQueue = async (ts: ITemplate[]) => {
-    const prompts: Partial<IGeneratePortrait>[] = ts.map((x) => ({
-      ...x,
-      prompt: buildPrompt(x.prompt),
-      negative_prompt: buildPrompt(x.prompt, { negative: true }) + " " + negativePrompt,
-      controlnet: x.controlnet ?? {},
-      n_iter: x.nIter ?? nIter,
-      seed: x.seed ?? Math.floor(Math.random() * 10_000_000),
-    }));
+    // const prompts: Partial<IGeneratePortrait>[] = ts.map((x) => ({
+    //   ...x,
+    //   prompt: buildPrompt(x.prompt),
+    //   negative_prompt: buildPrompt(x.prompt, { negative: true }) + " " + negativePrompt,
+    //   controlnet: x.controlnet ?? {},
+    //   regional_prompter: buildRegPrompt(x.prompt),
+    //   n_iter: x.nIter ?? nIter,
+    //   seed: x.seed ?? seed ?? Math.floor(Math.random() * 10_000_000),
+    // }));
+
+    const prompts: Partial<IGeneratePortrait>[] = ts.map((x) => {
+      const prompt = buildPrompt(x.prompt);
+      const negative = buildPrompt(x.prompt, { negative: true });
+      const regPrompt = buildRegPrompt(x.prompt);
+      const alwayson_scripts = buildAlwaysOnScripts(x.controlnet, regPrompt);
+      return {
+        ...x,
+        prompt,
+        negative_prompt: `${negative}\n${negativePrompt}`,
+        alwayson_scripts,
+        n_iter: x.nIter ?? nIter,
+        seed: x.seed ?? seed ?? Math.floor(Math.random() * 10_000_000),
+      };
+    });
     const defaultConfig = {
       negative_prompt: negativePrompt,
       width: 1000,
       height: 1200,
       steps: stepCount,
       sampler_name: 'DPM++ 2M Karras',
-      seed: Math.floor(Math.random() * 10_000_000),
+      seed: seed ?? Math.floor(Math.random() * 10_000_000),
     };
     const actionId = buildPrompt(templateId);
     const params = {
@@ -215,9 +281,8 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
     action();
   }, [templateId])
 
-
   const buildPrompt = (template: string, args: { negative: boolean } = { negative: false }): string => {
-    const [tPos, tNeg] = template.split('---');
+    const [tPos, tNeg, _regPrompt] = template.split('---');
     const t = args?.negative ? (tNeg ?? '') : tPos;
     const prompts = t.replace(/<(.*?)>/g, (_, p1) => {
       const key = p1.trim();
@@ -231,14 +296,51 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
     });
     return prompts;
   }
-  const [showHub, _] = useState<ShowHub>(initShowHub());
 
+  const buildRegPrompt = (template: string): IRegionalPrompterArgs | undefined => {
+    const [_tPos, _tNeg, regPrompt] = template.split('---');
+    if (!regPrompt) { return undefined; }
+    if (regPrompt === '') { return undefined; }
+    // sample format: (H|V|R|C):1,1;1,1
+    const [orientation, ratio] = regPrompt.split(':').map((x) => x.trim())
+    const [selectedOrientation] = ["Horizontal", "Vertical", "Rows", "Columns"]
+      .filter((x) => x[0].toLowerCase() === orientation[0].toLowerCase()) as ["Horizontal"];
+    console.log({ orientation, ratio, selectedOrientation })
+    const args: IRegionalPrompterArgs['args'] = [
+      true, // active
+      false, // debug
+      "Matrix",
+      selectedOrientation,
+      "Mask", // mask
+      "Prompt", // prompt
+      ratio as "1,1", // ratio
+      "", // base ratio
+      false, // use base
+      true, // use common
+      false, // use neg-common
+      "Attention", // prefer Attention
+      true, // change AND and BREAK
+      "0", // lora text encoder (?)
+      "0", // lora u-net
+      "0",  // threshold
+      "", // mask ?
+      // "0", // lora stop step
+      // "0", // lora hires stop step
+      // false // flip
+    ]
+    return { args };
+  }
+
+  const [showHub, _] = useState<ShowHub>(initShowHub());
+  const [seed, setSeed] = useState<number>(-1);
   const getPrompts = (): string => {
     return templates.map((x) => x.prompt).map((x) => buildPrompt(x)).join('\n\n');
   }
   return (
     <PromptContext.Provider value={{
       variables,
+      seed,
+      setSeed,
       pushQueue,
       showImage: (imgURL: string) => {
         showHub.emit('show', imgURL);
