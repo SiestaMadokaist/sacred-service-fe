@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { Button, Card, CardBody, CardHeader, Toast, ToastBody } from "reactstrap";
+import { Button, Card, CardHeader } from "reactstrap";
 import { SYSTEM_ENV } from "../helper/env";
 import { AxiosInstance } from "axios";
-import { IconCrossFilled, IconLock, IconSquaresDiagonal, IconX } from "@tabler/icons-react";
-import { getAuth } from "../api/api";
+import { IconCheck, IconLock, IconX } from "@tabler/icons-react";
+import { getAuth, setAuth } from "../api/api";
 import { useRefState } from "../hooks/useRefState";
 
 interface IReport {
@@ -12,10 +12,6 @@ interface IReport {
 }
 
 interface IShowcase {
-  // fetchInterval: number;// in ms;
-  // duration: number;// in ms;
-  // refURL: string;
-  // hub: ShowHub;
   collectionAPI: AxiosInstance;
 }
 
@@ -24,6 +20,9 @@ export const Showcase = (props: IShowcase): JSX.Element => {
   const [reports, setReports, reportsRef] = useRefState<IReport[]>([]);
   const [index, setIndex, indexRef] = useRefState(0);
   const [locked, setLocked, lockedRef] = useRefState(false);
+  const [connected, setConnected] = useState(false);
+  const [ws, setWs] = useState<WebSocket | null>(null);
+  const [lastUpdate, setLastUpdate] = useState(0);
   const addReport = (report: IReport) => {
     setReports([report, ...reportsRef.current]);
     if (!lockedRef.current) {
@@ -34,11 +33,27 @@ export const Showcase = (props: IShowcase): JSX.Element => {
   }
 
   useEffect(() => {
+    console.log({ ws, ready: ws?.readyState, lastUpdate });
+    if (ws === null) { return; }
+    if (ws.readyState === WebSocket.OPEN) {
+      setConnected(true);
+    } else {
+      setConnected(false);
+    }
+  }, [lastUpdate])
+
+  useEffect(() => {
+    const interval = setInterval(() => { setLastUpdate(Date.now()) }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
     const token = auth?.token ?? '';
     if (!token) { return; }
     if (token === '') { return; }
     console.log("WebSocket connecting...");
     const ws = new WebSocket(`${SYSTEM_ENV.WS_ENDPOINT}/?auth=${token}`);
+    setWs(ws);
     ws.onmessage = (event: MessageEvent) => {
       console.log(event.data);
       const data = JSON.parse(event.data);
@@ -49,13 +64,19 @@ export const Showcase = (props: IShowcase): JSX.Element => {
       }
     }
     ws.onopen = () => {
-      console.log("WebSocket connected");
+      setConnected(true);
     }
     ws.onerror = (event: Event) => {
+      setConnected(false);
       console.error("WebSocket error", event);
+    }
+    ws.onclose = (event: CloseEvent) => {
+      setConnected(false);
+      console.log("WebSocket closed", event);
     }
     return () => {
       ws.close();
+      setConnected(false);
     }
 
   }, [auth])
@@ -86,12 +107,25 @@ export const Showcase = (props: IShowcase): JSX.Element => {
     setLocked(!lockedRef.current);
   }
   const report = reports[index];
+  const resetWS = () => {
+    if (ws) {
+      ws.close();
+      setWs(null);
+      setAuth(getAuth())
+    }
+  }
+
+  const elem = connected ? (
+    <IconCheck onClick={resetWS} style={{ color: 'green', height: '2.5em', width: '2.5em' }} />
+  ) : (
+    <IconX onClick={resetWS} style={{ color: 'red', height: '2.5em', width: '2.5em', cursor: 'pointer' }} />
+  );
 
 
   return (
     <Card className="bg-white text-black w-100 h-100" style={{ overflow: 'hidden' }}>
       <CardHeader className="w-100 d-flex flex-wrap justify-content-center align-items center">
-        {/* <Button style={{ fontSize: '0.875em' }} color="primary" className="w-25 ml-1" onClick={toggleLock}>{lockedShow ? 'UNLOCK' : 'LOCK'}</Button> */}
+        {elem}
         <Button style={{ fontSize: '0.875em' }} color="primary" className="w-25 ml-1" onClick={prev}>&lt;</Button>
         <div style={{ display: reports.length > 0 ? 'block' : 'none' }} className="ml-2 w-20 justify-content-center align-items-center d-flex flex-wrap">{index + 1}/{reports.length}</div>
         <Button style={{ fontSize: '0.875em' }} color="primary" className="w-25 ml-2" onClick={next}>&gt;</Button>
@@ -102,23 +136,4 @@ export const Showcase = (props: IShowcase): JSX.Element => {
       </div>
     </Card>
   )
-}
-
-export const ShowcaseToast = (props: IShowcase): JSX.Element => {
-  const [show, setShow] = useState(false);
-  const [lockedShow, setLockedShow] = useState(false);
-  const toggleLock = () => {
-    setLockedShow(!lockedShow);
-  }
-
-  const closeButton = () => {
-    setShow(false);
-    setLockedShow(false);
-  }
-
-  return (<div className="position-fixed bottom-0 end-0 p-3" style={{ zIndex: 5 }}>
-    <Toast isOpen={show} className="bg-dark text-white" style={{ maxWidth: '400px' }} >
-      <Showcase {...props} />
-    </Toast>
-  </div>)
 }
