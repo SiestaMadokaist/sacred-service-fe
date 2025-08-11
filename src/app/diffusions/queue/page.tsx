@@ -1,0 +1,149 @@
+"use client";
+import { useEffect, useState } from "react"
+import { apiHub, initShowHub, ShowHub } from "../../../api/hub";
+import { useApi } from "../../../hooks/useApi";
+import { Button, Input, InputGroup, InputGroupText } from "reactstrap";
+import { IconTrash } from "@tabler/icons-react";
+import { useDebounce } from "use-debounce";
+import { AxiosInstance } from "axios";
+import { useToast } from "../../../hooks/useToast";
+import { SYSTEM_ENV } from "../../../helper/env";
+import { Showcase } from "../../../components/showcase";
+import { EventEmitter } from "stream";
+import { useTitle } from "../../../hooks/useTitle";
+
+export interface ITask {
+  jobId: string;
+  priorityScore: number;
+  actionType: 'generate' | 'fetch';
+  currentStatus: 'pending' | 'running' | 'completed' | 'failed' | 'canceled';
+  resourceCount: number;
+  actionId?: string;
+  progressCount?: number;
+}
+
+export interface IQueueElement {
+  task: ITask;
+  promptAPI: AxiosInstance;
+  renew: () => void;
+}
+
+const QueueElement = (props: IQueueElement) : JSX.Element => {
+  const { task, promptAPI } = props;
+  const callDelete = async () => {
+    await promptAPI.delete(`/queue/${task.jobId}`);
+    props.renew();
+  }
+
+  const [priorityScore, setPriorityScore] = useState(task.priorityScore);
+  const [dPrioScore] = useDebounce(priorityScore, 3000);
+
+  const callRepriority = async () => {
+    await promptAPI.put(`/queue/${task.jobId}`, { priorityScore });
+    props.renew();
+  }
+
+
+  useEffect(() => {
+    if (dPrioScore !== task.priorityScore) {
+      callRepriority();
+    }
+  }, [dPrioScore]);
+
+  useEffect(() => {
+    setPriorityScore(task.priorityScore);
+  }, [task.priorityScore])
+
+  const statusColor = () => {
+    if (task.currentStatus === 'pending') {
+      return 'darkorange';
+    }
+    if (task.currentStatus === 'running') {
+      return '#2196f3'; // blueish
+    }
+    return 'gray';
+  }
+
+  const progressed = () => {
+    if (task.progressCount === undefined || task.resourceCount === undefined) { return 0 }
+    if (task.resourceCount === 0) { return 0 }
+    return Math.floor((task.progressCount / task.resourceCount) * 100);
+  }
+
+  const bgText = `linear-gradient(to right, #4caf50 0 ${progressed()}%, white 0%)`;
+  useTitle("🕒 Queue Page");
+  return (<div className="w-100 d-flex flex-row mt-2">
+    <InputGroup className="w-100">
+      <Input style={{ width: '20%', maxWidth: '20%', fontSize: '0.8em', color: 'wheat', backgroundColor: 'darkmagenta' }} type="number" value={priorityScore} onChange={(v) => setPriorityScore(parseInt(v.target.value))} />
+      <InputGroupText className="w-15">{task.actionType}</InputGroupText>
+      <InputGroupText className="w-15">({task.progressCount ?? 0}/{task.resourceCount ?? 0})</InputGroupText>
+      <InputGroupText className="w-30" style={{
+        background: bgText,
+        maxWidth: '30%',
+        fontSize: '0.8em',
+      }} >{task.actionId}</InputGroupText>
+      <InputGroupText style={{ backgroundColor: statusColor() }} className="w-15">
+        {task.currentStatus}
+      </InputGroupText>
+    </InputGroup>
+    <Button className="w-10 ml-1" color="danger" onClick={callDelete}>
+      <IconTrash className="bg-transparent" size={16} />
+    </Button>
+  </div>)
+}
+
+export default function QueuePage(): JSX.Element {
+  const [hub] = useState(apiHub());
+  const promptAPI = useApi(hub, '/prompts');
+  const collectionAPI = useApi(hub, '/collections');
+  const [queueData, setQueue] = useState<ITask[]>([]);
+  const fetchQueue = async () => {
+    if (document?.visibilityState === 'hidden') { return }
+    const resp = await promptAPI.get('/queue');
+    const data = resp.data as ITask[];
+    setQueue(data);
+  }
+  const { toastElement, showToast } = useToast({ duration: 3000 });
+
+  useEffect(() => {
+    hub.on('api-error', (err: any) => {
+      showToast({ title: 'API Error', message: err.message, level: 'danger', show: true });
+    })
+    hub.on('api-success', (msg: any) => {
+      showToast({ title: 'API Success', message: msg.message, level: 'success', show: true });
+    })
+  }, []);
+
+  const [lastUpdated, setLastUpdated] = useState(new Date());
+
+  useEffect(() => {
+    fetchQueue();
+  }, [lastUpdated])
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLastUpdated(new Date());
+    }, 10_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const onRenew = fetchQueue;
+  return (
+    <div className="w-100 h-100vh d-flex flex-wrap">
+      {toastElement}
+      <div className="mt-2 w-100 h-98 d-flex flex-row">
+        <div className="w-50 d-flex flex-wrap">
+          <div className="w-90 color-white d-flex flex-row justify-content-center align-items-center">
+            <h4>Queue Manager</h4>
+          </div>
+          <div className="w-90 ml-5 d-flex flex-column align-items-center">
+            {queueData.map((x, i) => (<QueueElement renew={onRenew} promptAPI={promptAPI} key={`queue-${i}`} task={x} />))}
+          </div>
+        </div>
+        <div className="w-50" style={{ maxHeight: '100vh', overflowY: 'auto', zIndex: 6 }}>
+          <Showcase collectionAPI={collectionAPI} />
+        </div>
+      </div>
+    </div>
+  )
+}

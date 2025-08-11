@@ -1,0 +1,26 @@
+@for $i from 1 through 20 {
+  .ml-#{$i * 5} {
+    margin-left: #{$i * 5}#{'%'};
+  }
+
+  .mt-#{$i * 5}vh {
+    margin-top: #{$i * 5}vh;
+  }
+  
+}
+
+.ml-1 {
+  margin-left: 1%;
+}
+
+.ml-2 {
+  margin-left: 2%;
+}
+
+.ml-3 {
+  margin-left: 3%;
+}
+
+.ml-4 {
+  margin-left: 4%;
+}

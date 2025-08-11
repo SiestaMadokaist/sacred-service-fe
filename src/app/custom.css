@@ -1,0 +1,59 @@
+.position-relative {
+  position: relative !important;
+}
+
+.overflow-scroll {
+  overflow: scroll !important;
+}
+
+body {
+  background-color: #111414 !important;
+}
+
+.bg-dark {
+  background-color: #181818 !important;
+}
+
+.bg-lightdark {
+  background-color: #282828 !important;
+}
+
+.bg-red {
+  background-color: #ff0000 !important;
+}
+
+.bg-green {
+  background-color: #00ff00 !important;
+}
+
+.bg-blue {
+  background-color: #0000ff !important;
+}
+
+.bg-gray {
+  background-color: #808080 !important;
+}
+
+.color-white {
+  color: #ffffff !important;
+}
+
+.color-light {
+  color: #bfbfbf !important;
+}
+
+.justify-center {
+  justify-content: center !important;
+}
+
+.align-center {
+  align-items: center !important;
+}
+
+.margin-auto {
+  margin: auto !important;
+}
+
+svg {
+  background-color: white;
+}
