@@ -35,7 +35,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { useEffect, useState } from "react";
 
-const IMAGES_PER_ROW = 3;
+const IMAGES_PER_ROW = 2;
 const MAX_DISPLAY = 20;
 
 interface ISortableImage {

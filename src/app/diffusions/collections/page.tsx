@@ -26,6 +26,15 @@ function CollectionManagerInner() {
   const { collectionAPI, urls: allUrls, offset, setUrls } = useGallery();
 
   const urls = allUrls.slice(offset, offset + 9);
+
+  useEffect(() => {
+    const action = async () => {
+      const { data } = await collectionAPI.get('/list');
+      setCollectionIds(data);
+    }
+    action();
+  }, [])
+  
   useEffect(() => {
     const action = async () => {
       if (collectionId) {
