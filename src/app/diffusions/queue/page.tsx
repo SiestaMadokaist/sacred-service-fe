@@ -31,7 +31,7 @@ export interface IQueueElement {
 const QueueElement = (props: IQueueElement) : JSX.Element => {
   const { task, promptAPI } = props;
   const callDelete = async () => {
-    await promptAPI.delete(`/queue/${task.jobId}`);
+    await promptAPI.delete(`/queue`, { data: { jobId: task.jobId }});
     props.renew();
   }
 
@@ -39,7 +39,7 @@ const QueueElement = (props: IQueueElement) : JSX.Element => {
   const [dPrioScore] = useDebounce(priorityScore, 3000);
 
   const callRepriority = async () => {
-    await promptAPI.put(`/queue/${task.jobId}`, { priorityScore });
+    await promptAPI.put(`/queue`, { jobId: task.jobId, priorityScore });
     props.renew();
   }
 

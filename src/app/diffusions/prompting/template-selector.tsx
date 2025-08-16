@@ -21,7 +21,7 @@ export const TemplateSelector = (): JSX.Element => {
     if (!templateId) {
       return;
     }
-    const resp = await ctx.promptAPI.delete(`/${templateId}`);
+    const resp = await ctx.promptAPI.delete(`/`, { data: { name: templateId }});
     if (resp.status === 200) {
       ctx.showToast({ title: 'Delete Success', message: 'Template Deleted', level: 'success', show: true });
       fetchTemplates();
