@@ -1,9 +1,9 @@
-import { Input, InputGroup, InputGroupText } from "reactstrap";
-import { IFilter, SearchPrompt } from "../../../components/Artbox/ViewerControl.Filter";
+import { Button } from "reactstrap";
+import { ControlSearch } from "../../../components/Artbox/ViewerControl.Filter";
 import useLocalStorage from "use-local-storage";
 import { AxiosInstance } from "axios";
-import { useEffect, useState } from "react";
-import { useDebounce } from "use-debounce";
+// import { useDebounce } from "use-debounce";
+import { ControlDirectory } from "@/components/Artbox/ViewerControl.Directory";
 
 export interface ISrcControl {
   collectionAPI: AxiosInstance
@@ -11,28 +11,21 @@ export interface ISrcControl {
   onUrlsChange: (urls: string[]) => void;
 }
 
+type Mode = "search" | "gallery";
+
 export function SrcControl(props: ISrcControl): JSX.Element {
-  const { collectionAPI, onUrlsChange } = props;  
-  const [filter, setFilter] = useLocalStorage<IFilter>('filter-prompt', { prompts: '', loras: '', checkpoint: '' });
-  const [debouncedFilter] = useDebounce(filter, 1000);
-  const [offset, setOffset] = useState<number>(0);
-  const onSearch = async () => {
-    const resp = await collectionAPI.post('/filter', filter)
-    onUrlsChange(resp.data);
+  const [mode, setMode] = useLocalStorage<Mode>("collection-mode", "gallery");
+  const inner = mode === "search" ? (<ControlSearch />) : (<ControlDirectory />)
+  // const inner = mode === "search" ? (<SrcControlSearch {...props} />) : <SrcControlDir {...props} />
+  const buttonColor = (buttonFor: Mode) => {
+    if (buttonFor === mode) { return undefined }
+    return "primary";
   }
-  useEffect(() => {
-    if (debouncedFilter.prompts !== '') {
-      onSearch();
-    }
-  }, [debouncedFilter]);
-    
-  
-  return (<div className="d-flex flex-column w-100">
-    <InputGroup>
-      <InputGroupText className="w-20">Offset</InputGroupText>
-      <Input type="number" value={offset} onChange={(e) => setOffset(parseInt(e.target.value))}></Input>
-      <InputGroupText>of {props.urls.length}</InputGroupText>
-    </InputGroup>
-    <SearchPrompt filter={filter} onFilterChange={setFilter} />
+  return (<div className="d-flex-row w-100 mt-1">
+    <div className="d-flex-column w-100 mb-2">
+      <Button color={buttonColor("search")} onClick={() => setMode("search")} className="w-49">Search</Button>
+      <Button color={buttonColor("gallery")} onClick={() => setMode("gallery")} className="w-49 ml-2">Directory</Button>
+    </div>
+    {inner}
   </div>)
 }

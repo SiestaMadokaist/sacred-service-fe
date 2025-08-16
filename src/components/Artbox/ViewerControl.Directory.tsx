@@ -3,6 +3,8 @@ import { PictureMetadata } from "./Metadata";
 import { AxiosInstance } from "axios";
 import { useGallery } from "./context";
 import ReactSelect from "react-select";
+import { useEffect, useState } from "react";
+import useLocalStorage from "use-local-storage";
 
 export interface ISelectDirectory {
   directory: string;
@@ -24,14 +26,7 @@ export function SelectDirectory(props: ISelectDirectory): JSX.Element {
   )
 }
 
-export interface IControlDirectory {
-  directory: string;
-  directories: string[];
-  setDirectory: (p: string) => void;
-  setDirectories: (p: string[]) => void;
-}
-
-export function ControlDirectory(props: IControlDirectory): JSX.Element {
+export function ControlDirectory(): JSX.Element {
   const { 
     offset,
     urls,
@@ -43,6 +38,19 @@ export function ControlDirectory(props: IControlDirectory): JSX.Element {
   const url = urls[offset] ?? '/';
   const urlParts = url.split('/');
   const fileName = urlParts.pop();
+
+  const [directories, setDirectories] = useState<string[]>([]);
+  const [directory, setDirectory] = useLocalStorage<string>('image.directory', '2025-04-10');
+
+  const props = { directories, setDirectories, directory, setDirectory };
+
+  useEffect(() => {
+    const action = async () => {
+      const { data: tmpDirectories } = await collectionAPI.get<string[]>('/dirs');
+      setDirectories(tmpDirectories.reverse());
+    }
+    action();
+  }, []);
 
   const onDirectorySelected = async (dirname: string) => {
     const response = await collectionAPI.get(`/dirs/${dirname}/list`, {});

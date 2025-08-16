@@ -283,7 +283,8 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
 
   const buildPrompt = (template: string, args: { negative: boolean } = { negative: false }): string => {
     const [tPos, tNeg, _regPrompt] = template.split('---');
-    const t = args?.negative ? (tNeg ?? '') : tPos;
+    const t0 = args?.negative ? (tNeg ?? '') : tPos;
+    const t = t0.split('\n').filter((x) => x.trim().startsWith('#') === false).join('\n');
     const prompts = t.replace(/<(.*?)>/g, (_, p1) => {
       const key = p1.trim();
       const value = variables[key];

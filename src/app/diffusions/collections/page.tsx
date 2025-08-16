@@ -4,18 +4,18 @@ import useLocalStorage from "use-local-storage";
 import { SrcPreview } from "./src-preview";
 import { DstPreview } from "./dst-preview";
 import { apiHub } from "../../../api/hub";
-import { useApi } from "../../../hooks/useApi";
 import { SrcControl } from "./src-control";
 import { DstControl } from "./dst-control";
 import { useToast } from "../../../hooks/useToast";
+import { GalleryProvider, useGallery } from "@/components/Artbox/context";
 
-export default function CollectionManager() {
-  const [urls, setUrls] = useLocalStorage<string[]>('filter-urls', []);
+function CollectionManagerInner() {
+  // const [urls, setUrls] = useLocalStorage<string[]>('filter-urls', []);
   const [collectionUrls, setCollectionUrls] = useState<string[]>([]);
   const [collectionIds, setCollectionIds] = useState<string[]>([]);
   const [collectionId, setCollectionId] = useLocalStorage<string>('collectionid', 'test');
   const [hub] = useState(apiHub());
-  const collectionAPI = useApi(hub, '/collections');
+  // const collectionAPI = useApi(hub, '/collections');
   const { toastElement, showToast } = useToast({ duration: 3000 });
   useEffect(() => {
     hub.on('api-error', (err) => {
@@ -23,14 +23,9 @@ export default function CollectionManager() {
     })
   }, []);
 
-  useEffect(() => {
-    const action = async () => {
-      const { data } = await collectionAPI.get('/list');
-      setCollectionIds(data);
-    }
-    action();
-  }, [])
+  const { collectionAPI, urls: allUrls, offset, setUrls } = useGallery();
 
+  const urls = allUrls.slice(offset, offset + 9);
   useEffect(() => {
     const action = async () => {
       if (collectionId) {
@@ -70,26 +65,6 @@ export default function CollectionManager() {
 
   return (<div className="d-flex flex-wrap w-100 h-100vh">
     {toastElement}
-    <div className="d-flex flex-wrap w-70 h-100">
-      <div className="h-1 w-100"></div>
-      <div className="w-98 h-49" style={{ margin: 'auto' }}>
-        <SrcPreview
-          sources={sources}
-          destinations={destinations}
-          onImageClicked={onSourceClicked}
-          row={1.5}
-          column={5}
-        />
-      </div>
-      <div className="h-1 w-100"></div>
-      <div className="d-flex w-98 h-49" style={{ margin: 'auto' }}>
-        <DstPreview
-          destinations={collectionUrls}
-          onReorder={onDstReorder}
-          onRemove={onDstRemove}
-        />
-      </div>
-    </div>
     <div className="d-flex flex-wrap w-30 h-100">
       <div className="d-flex w-98 h-49" style={{ margin: 'auto' }}>
         <SrcControl urls={urls} collectionAPI={collectionAPI} onUrlsChange={setUrls} />
@@ -104,5 +79,31 @@ export default function CollectionManager() {
         />
       </div>
     </div>
+    <div className="d-flex flex-wrap w-70 h-100">
+      {/* <div className="w-1 h-100"></div> */}
+      <div className="w-50 h-100" style={{ margin: 'auto' }}>
+        <SrcPreview
+          sources={sources}
+          destinations={destinations}
+          onImageClicked={onSourceClicked}
+          row={3}
+          column={3}
+        />
+      </div>
+      {/* <div className="w-30 w-100"></div> */}
+      <div className="d-flex w-49 ml-2 h-100" style={{ margin: 'auto' }}>
+        <DstPreview
+          destinations={collectionUrls}
+          onReorder={onDstReorder}
+          onRemove={onDstRemove}
+        />
+      </div>
+    </div>
   </div >)
+}
+
+export default function CollectionManager(): JSX.Element {
+  return (<GalleryProvider>
+    <CollectionManagerInner/>
+  </GalleryProvider>)
 }

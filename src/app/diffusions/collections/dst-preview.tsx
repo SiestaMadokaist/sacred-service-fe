@@ -35,13 +35,12 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { useEffect, useState } from "react";
 
-const IMAGES_PER_ROW = 5;
+const IMAGES_PER_ROW = 3;
 const MAX_DISPLAY = 20;
 
 interface ISortableImage {
   id: string;
   clickAt: number;
-  // tolerance: number;
 }
 
 function SortableImage(props: ISortableImage): JSX.Element {
@@ -59,7 +58,7 @@ function SortableImage(props: ISortableImage): JSX.Element {
     transform: CSS.Transform.toString(transform),
     transition,
     width: `${100 / IMAGES_PER_ROW}%`,
-    opacity: isDragging ? 1 : 0.5,
+    opacity: isDragging ? 0.5 : 1,
     padding: '4px',
     boxSizing: 'border-box' as 'border-box',
     cursor: 'grab',
@@ -115,7 +114,7 @@ export function DstPreview(props: IDstPreview): JSX.Element {
   const visibleUrls = urls;
 
   return (
-    <div className="w-100 h-100" style={{}}>
+    <div className="d-flex flex-wrap w-100 h-100">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <SortableContext items={visibleUrls} strategy={rectSortingStrategy}>
           <div style={{ display: 'flex', flexWrap: 'wrap' }}>

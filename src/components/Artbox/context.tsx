@@ -7,7 +7,7 @@ import { AxiosInstance } from "axios";
 import { SYSTEM_ENV } from "../../helper/env";
 
 interface IGalleryProvider {
-  imageType: 'gallery' | 'search';
+  // imageType: 'gallery' | 'search';
   children: ReactNode;
 }
 

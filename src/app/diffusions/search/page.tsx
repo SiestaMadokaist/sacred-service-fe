@@ -19,28 +19,6 @@ function SearchPage(): JSX.Element {
   } = ctx;
 
   const url = urls[offset];
-  const [filter, setFilter] = useLocalStorage<IFilter>('gallery.filters', {
-    prompts: '',
-    loras: '',
-    checkpoint: ''
-  });
-  const [debouncedFilter] = useDebounce(filter, 1000);
-
-  useEffect(() => {
-    const isEmpty = (debouncedFilter?.prompts ?? '').trim() === '';
-    if (isEmpty) {
-      return;
-    }
-    const action = async () => {
-      const { data: tmpUrls } = await collectionAPI.post<string[]>('/filter', {
-        prompts: debouncedFilter.prompts ?? '',
-        loras: debouncedFilter.loras ?? '',
-        checkpoint: debouncedFilter.checkpoint ?? '',
-      });
-      ctx.setUrls(tmpUrls);
-    }
-    action();
-  }, [debouncedFilter])
 
   return (<div className="w-100 d-flex h-100vh">
     {toastElement}
@@ -49,7 +27,7 @@ function SearchPage(): JSX.Element {
     </div>
     <div className="w-30">
       <div className="mt-2" />
-      <ControlSearch filter={filter} onFilterChange={setFilter} />
+      <ControlSearch />
       <div className="h-20 mt-2">
         <Thumbs size={4} />
       </div>
@@ -60,7 +38,7 @@ function SearchPage(): JSX.Element {
 }
 
 export default function Page(): JSX.Element {
-  return (<GalleryProvider imageType="search">
+  return (<GalleryProvider>
     <SearchPage />
   </GalleryProvider>)
 }
