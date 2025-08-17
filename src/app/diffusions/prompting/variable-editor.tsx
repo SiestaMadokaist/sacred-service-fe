@@ -16,14 +16,11 @@ const VariableEditor = (props: IVariableEditor): JSX.Element => {
   const [value, setValue] = useState<string>(props.v ?? '');
   const [debouncedValue] = useDebounce(value, 1000);
 
-  const valid = value.endsWith(',');
 
   useEffect(() => {
-    if (!valid) {
-      ctx.showToast({ title: 'Invalid Variable', message: 'Variable must end with a comma', level: 'danger', show: true });
-      return;
-    }
-    const newVars = { ...ctx.variables, [props.k]: value };
+    // const endWithComma = value.endsWith(',');
+    const newValue = value.replace(/\,$/, "");
+    const newVars = { ...ctx.variables, [props.k]: newValue };
     ctx.setVariables(newVars);
   }, [debouncedValue]);
 
@@ -52,14 +49,14 @@ const VariableEditor = (props: IVariableEditor): JSX.Element => {
     setShowPreview(!showPreview);
   }
 
-  const bgColor = !valid ? '#813' : 'white';
+  // const bgColor = !endWithComma ? '#813' : 'white';
   return (<div className="w-100">
     <InputGroup className="mb-2 w-100">
       <InputGroupText className="w-15" onClick={onCountClicked} style={{ backgroundColor: '#ffc107', fontSize: '0.8em', cursor: 'pointer' }} >{ctx.varCounts[props.k]}x</InputGroupText>
       <InputGroupText onClick={() => autoInsert(props.k)} style={{ fontSize: '0.8em' }} className="w-30">
         <VariablePreview hide={() => setShowPreview(false)} name={props.k} value={value} isShown={showPreview} />
       </InputGroupText>
-      <Input style={{ backgroundColor: bgColor, color: valid ? 'black' : 'white' }} type="text" value={value} onChange={onChange} />
+      <Input style={{ backgroundColor: 'white', color: 'black' }} type="text" value={value} onChange={onChange} />
     </InputGroup>
   </div>)
 

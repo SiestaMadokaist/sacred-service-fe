@@ -89,7 +89,6 @@ function CollectionManagerInner() {
       </div>
     </div>
     <div className="d-flex flex-wrap w-70 h-100">
-      {/* <div className="w-1 h-100"></div> */}
       <div className="w-50 h-100" style={{ margin: 'auto' }}>
         <SrcPreview
           sources={sources}
@@ -99,8 +98,7 @@ function CollectionManagerInner() {
           column={3}
         />
       </div>
-      {/* <div className="w-30 w-100"></div> */}
-      <div className="d-flex w-49 ml-2 h-100" style={{ margin: 'auto' }}>
+      <div className="w-50 h-100" style={{ margin: 'auto' }}>
         <DstPreview
           destinations={collectionUrls}
           onReorder={onDstReorder}

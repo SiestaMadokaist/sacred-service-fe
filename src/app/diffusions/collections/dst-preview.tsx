@@ -114,7 +114,7 @@ export function DstPreview(props: IDstPreview): JSX.Element {
   const visibleUrls = urls;
 
   return (
-    <div className="d-flex flex-wrap w-100 h-100">
+    <div className="d-flex flex-wrap w-100 h-100" style={{ overflowY: "auto" }}>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <SortableContext items={visibleUrls} strategy={rectSortingStrategy}>
           <div style={{ display: 'flex', flexWrap: 'wrap' }}>
