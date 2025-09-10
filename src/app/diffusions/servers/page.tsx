@@ -160,7 +160,7 @@ const ComputeManager: React.FC = () => {
         </Row>
       ) : (
         <>
-            {instances.filter((x) => x.State.Name === 'running').length === 0 && (
+            {true && (
               <Row className="d-flex align-items-center justify-content-between" >
               <Col>
                 <Button color="success" onClick={launchNewInstance}>
