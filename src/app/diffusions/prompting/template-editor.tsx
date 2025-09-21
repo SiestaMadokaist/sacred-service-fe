@@ -3,7 +3,7 @@ import { ITemplate, usePromptContext } from "./context";
 import { Button, Col, Input, Label, Row } from "reactstrap";
 import { useDebounce } from "use-debounce";
 import { ImageUrlDropzone } from "../../../components/DragNDrop/ImageURLDropzone";
-import { IconSquare } from "@tabler/icons-react";
+import { AutocompleteTextarea } from "@/components/autocomplete";
 
 export interface ITemplateEditor {
   index: number;
@@ -37,20 +37,23 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
   const [localTemplate, setLocalTemplate] = useState<string>(props.template.prompt);
   const [debouncedTemplate] = useDebounce(localTemplate, 1000);
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>(props.template.orientation ?? 'portrait');
+  const [valid, setValid] = useState(true);
+  const [controlnetImage, setControlnetImage] = useState<string | undefined>();
 
   useEffect(() => {
     setOrientation(props.template.orientation ?? 'portrait');
   }, [ctx.templateId])
 
-  const valueLeak = (t: string, vars: Record<string, string>): [string, string] | [null, null] => {
+  const valueLeak = (t: string, vars: Record<string, string>): [string, string][] => {
     const keys = Object.keys(vars);
+    const leaks: [string, string][] = [];
     for (const key of keys) {
       const value = vars[key];
       if (value.length > 0 && t.includes(value)) {
-        return [key, value];
+        leaks.push([key, value]);
       }
     }
-    return [null, null];
+    return leaks;
   }
 
   const validateBracket = (template: string) => {
@@ -78,14 +81,13 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
 
   useEffect(() => {
     setLocalTemplate(props.template.prompt);
+    setOrientation(props.template.orientation ?? 'portrait');
+    setControlnetImage(props.template.controlnet?.source)
   }, [props.template])
 
   const validateTemplate = (template: string) => {
     return !template.includes('},');
   }
-
-  const [valid, setValid] = useState(true);
-  const [controlnetImage, setControlnetImage] = useState<string | undefined>();
 
   const colorProperties: React.CSSProperties = (() => {
     if (!valid) {
@@ -109,14 +111,14 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
       ctx.showToast({ title: 'Invalid Template', message: 'template bracket is invalid', level: 'danger', show: true });
       return;
     }
-    const [leakingKey, leakingValue] = valueLeak(debouncedTemplate, ctx.variables);
-    if (leakingKey && leakingValue) {
-      setValid(false);
-      ctx.showToast({ title: 'Value Leak', message: `Template is leaking value ${leakingKey}`, level: 'danger', show: true });
-      return;
+    const leaks = valueLeak(debouncedTemplate, ctx.variables);
+    console.log({ leaks });
+    let updatedTemplate = debouncedTemplate;
+    for (const [leakingKey, leakingValue] of leaks) {
+      const regex = new RegExp(leakingValue, 'g');
+      updatedTemplate = updatedTemplate.replace(regex, `{${leakingKey}}`);
     }
-    setValid(true);
-    ctx.setTemplate(props.index, { prompt: debouncedTemplate, ...resolution(), orientation, });
+    ctx.setTemplate(props.index, { prompt: updatedTemplate, ...resolution(), orientation, });
   }, [debouncedTemplate])
 
   const addTemplate = () => {
@@ -150,25 +152,12 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
     await ctx.pushQueue(prompts);
   }
 
-  // const fuzzySearch = async () => {
-  //   const prompt = ctx.buildPrompt(localTemplate);
-  //   const qualifier = ctx.variables['qualifier'] ?? '';
-  //   const promptWithoutQualifier = prompt.replace(qualifier, '');
-  //   const cleanedPrompts = promptWithoutQualifier.replace(/[\n\r]/g, ' ').replace(/\s+/g, ' ');
-  //   const resp = await ctx.collectionAPI.post('/fuzzy-filter', {
-  //     tags: cleanedPrompts.split(',').map((x) => x.trim()),
-  //   });
-  //   if (resp.data.length > 0) {
-  //     ctx.showImage(resp.data[0])
+  // const onKeyDown = (e: React.KeyboardEvent) => {
+  //   if (e.key === 'Enter' && e.ctrlKey) {
+  //     e.preventDefault();
+  //     pushQueue();
   //   }
   // }
-
-  const onKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && e.ctrlKey) {
-      e.preventDefault();
-      pushQueue();
-    }
-  }
 
   const onClick = (o: typeof orientation) => {
     return (e: React.MouseEvent) => {
@@ -177,10 +166,18 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
     }
   }
 
+  
   return (<div className="d-flex w-100 flex-wrap">
     <Row className="mt-2 d-flex flex-wrap w-100" style={{ borderBottom: '2px solid #2c3e3f', paddingBottom: '0.5rem' }}>
       <Col>
-        <Input onKeyDown={onKeyDown} style={{ fontFamily: 'monospace', fontSize: '0.875rem', ...colorProperties }} className="h-80" type="textarea" value={localTemplate} onChange={(e) => setLocalTemplate(e.target.value)} />
+        <AutocompleteTextarea
+          className="h-80"
+          value={localTemplate}
+          onSubmit={pushQueue}
+          onChange={setLocalTemplate}
+          suggestions={Object.keys(ctx.variables).map((k) => `{${k}}`)}
+        />
+        {/* <Input onKeyDown={onKeyDown} style={{ fontFamily: 'monospace', fontSize: '0.875rem', ...colorProperties }} className="h-80" type="textarea" value={localTemplate} onChange={(e) => setLocalTemplate(e.target.value)} /> */}
         <Button onClick={pushQueue} style={{ color: 'yellow' }} className="mt-2 w-100" color="success">Queue Single</Button>
       </Col>
       <Col sm="2" className="d-flex flex-wrap justify-content-center align-items-center">
