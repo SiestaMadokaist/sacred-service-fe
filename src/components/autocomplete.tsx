@@ -11,6 +11,8 @@ export interface IAutocompleteTextarea {
   onChange: (value: string) => void;
   onSubmit: (value: string) => void; // trigger when ctrl+enter pressed
   className?: string;
+  children?: React.ReactNode;
+  style?: React.CSSProperties;
 }
 
 export const AutocompleteTextarea = (props: IAutocompleteTextarea): JSX.Element => {
@@ -103,10 +105,10 @@ export const AutocompleteTextarea = (props: IAutocompleteTextarea): JSX.Element 
       return;
     }
     if (!open || filtered.length === 0) return; // nothing to do for navigation/acceptance
-    if (e.key === "ArrowDown") {
+    if (e.key === "ArrowDown" && e.ctrlKey) {
       e.preventDefault();
       setHighlight((h) => (h + 1) % filtered.length);
-    } else if (e.key === "ArrowUp") {
+    } else if (e.key === "ArrowUp" && e.ctrlKey) {
       e.preventDefault();
       setHighlight((h) => (h - 1 + filtered.length) % filtered.length);
     } else if (e.key === "Tab" || (e.key === "Enter" && !(e.ctrlKey || e.metaKey))) {
@@ -160,7 +162,7 @@ export const AutocompleteTextarea = (props: IAutocompleteTextarea): JSX.Element 
           // Reactstrap's Input exposes the DOM node via innerRef
           textareaRef.current = (el as unknown as HTMLTextAreaElement) || null;
         }}
-        style={{ fontFamily: 'monospace', fontSize: '0.875rem', lineHeight: '1.25rem', backgroundColor: '#2a292f', color: '#b8c6d4ff' }}
+        style={{ fontFamily: 'monospace', fontSize: '0.875rem', lineHeight: '1.25rem', ...props.style  }}
         value={text}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
@@ -192,6 +194,7 @@ export const AutocompleteTextarea = (props: IAutocompleteTextarea): JSX.Element 
           ))}
         </div>
       )}
+      {props.children}
     </div>
   );
 };

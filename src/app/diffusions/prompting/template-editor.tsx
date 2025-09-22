@@ -112,7 +112,6 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
       return;
     }
     const leaks = valueLeak(debouncedTemplate, ctx.variables);
-    console.log({ leaks });
     let updatedTemplate = debouncedTemplate;
     for (const [leakingKey, leakingValue] of leaks) {
       const regex = new RegExp(leakingValue, 'g');
@@ -152,17 +151,10 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
     await ctx.pushQueue(prompts);
   }
 
-  // const onKeyDown = (e: React.KeyboardEvent) => {
-  //   if (e.key === 'Enter' && e.ctrlKey) {
-  //     e.preventDefault();
-  //     pushQueue();
-  //   }
-  // }
-
   const onClick = (o: typeof orientation) => {
     return (e: React.MouseEvent) => {
       setOrientation(o);
-      ctx.setTemplate(props.index, { ...ctx.templates[props.index], orientation, ...resolution(o) });
+      ctx.setTemplate(props.index, { ...ctx.templates[props.index], orientation: o, ...resolution(o) });
     }
   }
 
@@ -176,9 +168,10 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
           onSubmit={pushQueue}
           onChange={setLocalTemplate}
           suggestions={Object.keys(ctx.variables).map((k) => `{${k}}`)}
-        />
-        {/* <Input onKeyDown={onKeyDown} style={{ fontFamily: 'monospace', fontSize: '0.875rem', ...colorProperties }} className="h-80" type="textarea" value={localTemplate} onChange={(e) => setLocalTemplate(e.target.value)} /> */}
-        <Button onClick={pushQueue} style={{ color: 'yellow' }} className="mt-2 w-100" color="success">Queue Single</Button>
+          style={{ ...colorProperties }}
+        >
+          <Button onClick={pushQueue} style={{ color: 'yellow' }} className="mt-2 w-100" color="success">Queue Single</Button>
+        </AutocompleteTextarea>
       </Col>
       <Col sm="2" className="d-flex flex-wrap justify-content-center align-items-center">
         <ImageUrlDropzone onUrlDrop={(imageURL) => setControlnetImage(imageURL)} />
