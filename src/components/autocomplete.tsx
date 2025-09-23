@@ -20,7 +20,7 @@ export const AutocompleteTextarea = (props: IAutocompleteTextarea): JSX.Element 
     value = "",
     placeholder = "Type here…",
     suggestions = [],
-    maxSuggestions = 6,
+    maxSuggestions = 20,
     minTriggerChars = 2,
     onChange,
     onSubmit,

@@ -117,6 +117,7 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
       const regex = new RegExp(leakingValue, 'g');
       updatedTemplate = updatedTemplate.replace(regex, `{${leakingKey}}`);
     }
+    setValid(true);
     ctx.setTemplate(props.index, { prompt: updatedTemplate, ...resolution(), orientation, });
   }, [debouncedTemplate])
 
