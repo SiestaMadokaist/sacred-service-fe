@@ -19,6 +19,7 @@ export interface IAuth {
   sub: string;
   claim: any;
   sessionId: string;
+  idx?: number;
 }
 
 const cookies = new Cookies(null, { path: '/' });

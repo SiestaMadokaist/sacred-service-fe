@@ -105,13 +105,13 @@ export const AutocompleteTextarea = (props: IAutocompleteTextarea): JSX.Element 
       return;
     }
     if (!open || filtered.length === 0) return; // nothing to do for navigation/acceptance
-    if (e.key === "ArrowDown" && e.ctrlKey) {
+    if (e.ctrlKey && (e.key === "ArrowDown" || e.key === "ArrowRight")) {
       e.preventDefault();
       setHighlight((h) => (h + 1) % filtered.length);
-    } else if (e.key === "ArrowUp" && e.ctrlKey) {
+    } else if (e.ctrlKey && (e.key === "ArrowUp" || e.key === "ArrowLeft")) {
       e.preventDefault();
       setHighlight((h) => (h - 1 + filtered.length) % filtered.length);
-    } else if (e.key === "Tab" || (e.key === "Enter" && !(e.ctrlKey || e.metaKey))) {
+    } else if (e.key === "Tab") {
       e.preventDefault();
       const choice = filtered[highlight] ?? filtered[0];
       if (choice) replaceCurrentToken(choice);

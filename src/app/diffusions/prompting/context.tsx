@@ -156,16 +156,6 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
     }
   }
   const pushQueue = async (ts: ITemplate[]) => {
-    // const prompts: Partial<IGeneratePortrait>[] = ts.map((x) => ({
-    //   ...x,
-    //   prompt: buildPrompt(x.prompt),
-    //   negative_prompt: buildPrompt(x.prompt, { negative: true }) + " " + negativePrompt,
-    //   controlnet: x.controlnet ?? {},
-    //   regional_prompter: buildRegPrompt(x.prompt),
-    //   n_iter: x.nIter ?? nIter,
-    //   seed: x.seed ?? seed ?? Math.floor(Math.random() * 10_000_000),
-    // }));
-
     const prompts: Partial<IGeneratePortrait>[] = ts.map((x) => {
       const prompt = buildPrompt(x.prompt);
       const negative = buildPrompt(x.prompt, { negative: true });
@@ -295,7 +285,26 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
       const value = variables[key];
       return value ?? `{${key}}`;
     });
-    return prompts;
+    // split by comma or newline, trim spaces, to lower case, remove duplicates
+    const lines = prompts.split('\n')
+    const tagLines = lines.map(line => line.split(',').map((tag) => tag.trim()).filter(tag => tag.length > 0))
+    const tagset = new Set<string>()
+    const simplified: string[] = []
+    const exceptions = ['addcol', 'addrow', 'addcomm'];
+    for (const tags of tagLines) {
+      for (const tag of tags) {
+        const tl = tag.toLowerCase();
+        if (exceptions.includes(tl)) {
+          simplified.push(tag);
+        } else if (!tagset.has(tl)) {
+          tagset.add(tl);
+          simplified.push(tag);
+        }
+      }
+      simplified.push('\n');
+    }
+    const joined = simplified.join(', ').replaceAll(`\n, `, '\n').replaceAll(/,\s*\n/g, '\n').trim();
+    return joined;
   }
 
   const buildRegPrompt = (template: string): IRegionalPrompterArgs | undefined => {

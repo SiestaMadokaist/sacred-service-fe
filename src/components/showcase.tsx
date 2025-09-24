@@ -5,6 +5,7 @@ import { AxiosInstance } from "axios";
 import { IconCheck, IconLock, IconX } from "@tabler/icons-react";
 import { getAuth, setAuth } from "../api/api";
 import { useRefState } from "../hooks/useRefState";
+import { get } from "http";
 
 interface IReport {
   url: string; 
@@ -16,7 +17,7 @@ interface IShowcase {
 }
 
 export const Showcase = (props: IShowcase): JSX.Element => {
-  const [auth] = useState(getAuth());
+  const [auth, setLocalAuth] = useState(getAuth());
   const [reports, setReports, reportsRef] = useRefState<IReport[]>([]);
   const [index, setIndex, indexRef] = useRefState(0);
   const [locked, setLocked, lockedRef] = useRefState(false);
@@ -33,7 +34,6 @@ export const Showcase = (props: IShowcase): JSX.Element => {
   }
 
   useEffect(() => {
-    console.log({ ws, ready: ws?.readyState, lastUpdate });
     if (ws === null) { return; }
     if (ws.readyState === WebSocket.OPEN) {
       setConnected(true);
@@ -51,14 +51,11 @@ export const Showcase = (props: IShowcase): JSX.Element => {
     const token = auth?.token ?? '';
     if (!token) { return; }
     if (token === '') { return; }
-    console.log("WebSocket connecting...");
     const ws = new WebSocket(`${SYSTEM_ENV.WS_ENDPOINT}/?auth=${token}`);
     setWs(ws);
     ws.onmessage = (event: MessageEvent) => {
-      console.log(event.data);
       const data = JSON.parse(event.data);
       if (data.type === 'NewImage') {
-        console.log(data)
         const { url, createdAt } = data.data;
         addReport({ url, createdAt });
       }
@@ -111,7 +108,8 @@ export const Showcase = (props: IShowcase): JSX.Element => {
     if (ws) {
       ws.close();
       setWs(null);
-      setAuth(getAuth())
+      const newAuth = getAuth();
+      setLocalAuth({ ...newAuth, idx: Math.random() })
     }
   }
 
