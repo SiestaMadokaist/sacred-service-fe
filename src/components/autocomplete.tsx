@@ -27,6 +27,7 @@ export const AutocompleteTextarea = (props: IAutocompleteTextarea): JSX.Element 
     className = "",
   } = props;
 
+  const [active, setActive] = useState<boolean>(false);
   const [text, setText] = useState<string>(value);
   const [open, setOpen] = useState<boolean>(false);
   const [highlight, setHighlight] = useState<number>(0);
@@ -62,6 +63,10 @@ export const AutocompleteTextarea = (props: IAutocompleteTextarea): JSX.Element 
   }, [text, caret]);
 
   useEffect(() => {
+    if (!active) {
+      setOpen(false);
+      return;
+    }
     const t = token.trim();
     if (t.length >= minTriggerChars) {
       const lower = t.toLowerCase();
@@ -164,6 +169,8 @@ export const AutocompleteTextarea = (props: IAutocompleteTextarea): JSX.Element 
         }}
         style={{ fontFamily: 'monospace', fontSize: '0.875rem', lineHeight: '1.25rem', ...props.style  }}
         value={text}
+        onFocus={() => setActive(true)}
+        onBlur={() => setActive(false)}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         onKeyUp={handleSelect}
@@ -180,17 +187,18 @@ export const AutocompleteTextarea = (props: IAutocompleteTextarea): JSX.Element 
           className="absolute left-0 right-0 mt-2 max-h-64 overflow-auto rounded-2xl border border-gray-200 bg-white shadow-xl z-50"
         >
           {filtered.map((s, i) => (
-            <button
+            <Button
               key={`${s}-${i}`}
               type="button"
               onMouseDown={(e) => e.preventDefault()} // keep focus in textarea
               onClick={() => handleClickSuggestion(s)}
-              className={`block w-full text-left px-3 py-2 hover:bg-gray-100 ${
-                i === highlight ? "bg-gray-100" : "bg-white"
+              color={i === highlight ? "success" : ""}
+              className={`block w-full text-left px-3 py-2 ${
+                i === highlight ? "bg-gray-100" : "bg-blue-50"
               }`}
             >
               {s}
-            </button>
+            </Button>
           ))}
         </div>
       )}

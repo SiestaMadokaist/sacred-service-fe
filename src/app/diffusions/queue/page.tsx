@@ -8,7 +8,7 @@ import { useDebounce } from "use-debounce";
 import { AxiosInstance } from "axios";
 import { useToast } from "../../../hooks/useToast";
 import { SYSTEM_ENV } from "../../../helper/env";
-import { Showcase } from "../../../components/showcase";
+import { IReport, Showcase } from "../../../components/showcase";
 import { EventEmitter } from "stream";
 import { useTitle } from "../../../hooks/useTitle";
 
@@ -42,7 +42,6 @@ const QueueElement = (props: IQueueElement) : JSX.Element => {
     await promptAPI.put(`/queue`, { jobId: task.jobId, priorityScore });
     props.renew();
   }
-
 
   useEffect(() => {
     if (dPrioScore !== task.priorityScore) {
@@ -119,15 +118,24 @@ export default function QueuePage(): JSX.Element {
   }, [lastUpdated])
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setLastUpdated(new Date());
-    }, 10_000);
-    return () => clearInterval(interval);
-  }, []);
+    window.addEventListener('visibilitychange', () => {
+      if (document?.visibilityState === 'visible') {
+        setLastUpdated(new Date());
+      }
+    })
+  }, [])
+  const [report, setReport] = useState<IReport>({
+    createdAt: 0,
+    url: '',
+    prompts: '',
+    negatives: '',
+    loras: '',
+    checkpoint: ''
+  });
 
-  const onRenew = fetchQueue;
-
-  const [showHub, _] = useState<ShowHub>(initShowHub());
+  const onViewChanged = (report: IReport) => {
+    setReport(report);
+  }
   return (
     <div className="w-100 h-100vh d-flex flex-wrap justify-content-center">
       {toastElement}
@@ -136,11 +144,15 @@ export default function QueuePage(): JSX.Element {
       </div>
       <div className="w-50">
         <div className="w-90 ml-5">
-          {queueData.map((x, i) => (<QueueElement renew={onRenew} promptAPI={promptAPI} key={`queue-${i}`} task={x} />))}
-        </div>        
+          <div className="w-100 d-flex flex-row mt-2" style={{ height: '30vh' }}>
+            <pre style={{ color: 'white', whiteSpace: 'pre-wrap', maxHeight: '100%' }}>{report.prompts}</pre>
+          </div>
+
+          {queueData.map((x, i) => (<QueueElement renew={fetchQueue} promptAPI={promptAPI} key={`queue-${i}`} task={x} />))}
+        </div>
       </div>
       <div className="w-50" style={{ maxHeight: '90vh', overflowY: 'auto', zIndex: 6 }}>
-        <Showcase collectionAPI={collectionAPI} />
+        <Showcase onViewChanged={onViewChanged} collectionAPI={collectionAPI} onReport={() => setLastUpdated(new Date())} />
       </div>
     </div>
   )

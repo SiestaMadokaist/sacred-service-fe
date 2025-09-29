@@ -4,8 +4,6 @@ import { createContext, ReactNode, useContext, useEffect, useRef, useState } fro
 import { apiHub, initShowHub, ShowHub } from "../../../api/hub";
 import { useApi } from "../../../hooks/useApi";
 import { SYSTEM_ENV } from "../../../helper/env";
-import { EventEmitter } from "stream";
-import { Showcase } from "../../../components/showcase";
 
 type RATIO = `${number}${string|","}${number}`
 interface IRegionalPrompterArgs {

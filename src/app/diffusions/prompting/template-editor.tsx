@@ -159,7 +159,6 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
     }
   }
 
-  
   return (<div className="d-flex w-100 flex-wrap">
     <Row className="mt-2 d-flex flex-wrap w-100" style={{ borderBottom: '2px solid #2c3e3f', paddingBottom: '0.5rem' }}>
       <Col>

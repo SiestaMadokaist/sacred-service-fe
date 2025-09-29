@@ -5,15 +5,21 @@ import { AxiosInstance } from "axios";
 import { IconCheck, IconLock, IconX } from "@tabler/icons-react";
 import { getAuth, setAuth } from "../api/api";
 import { useRefState } from "../hooks/useRefState";
-import { get } from "http";
 
-interface IReport {
-  url: string; 
+export interface IReport {
   createdAt: number;
+  url: string; 
+  
+  prompts: string;
+  negatives: string;
+  loras: string;
+  checkpoint: string;
 }
 
 interface IShowcase {
   collectionAPI: AxiosInstance;
+  onReport(report: IReport): void;
+  onViewChanged(report: IReport): void
 }
 
 export const Showcase = (props: IShowcase): JSX.Element => {
@@ -56,8 +62,10 @@ export const Showcase = (props: IShowcase): JSX.Element => {
     ws.onmessage = (event: MessageEvent) => {
       const data = JSON.parse(event.data);
       if (data.type === 'NewImage') {
-        const { url, createdAt } = data.data;
-        addReport({ url, createdAt });
+        const report: IReport = data.data;
+        addReport({ ...report });
+        props.onReport(report);
+        props.onViewChanged(report);
       }
     }
     ws.onopen = () => {
@@ -94,12 +102,17 @@ export const Showcase = (props: IShowcase): JSX.Element => {
   }
 
   const prev = () => {
-    setIndex(Math.max(index - 1, 0))
+    const actualIdx = Math.max(index - 1, 0);
+    setIndex(actualIdx);
+    props.onViewChanged(reportsRef.current[actualIdx]);
   }
 
   const next = () => {
-    setIndex(Math.min(index + 1, reports.length - 1))
+    const actualIdx = Math.min(index + 1, reports.length - 1);
+    setIndex(actualIdx);
+    props.onViewChanged(reportsRef.current[actualIdx]);
   }
+
   const toggleLock = () => {
     setLocked(!lockedRef.current);
   }

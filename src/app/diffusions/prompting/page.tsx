@@ -36,7 +36,7 @@ function InnerPage(): JSX.Element {
         <VariableEditors />
       </div>
       <div className="w-100 h-55vh">
-        <Showcase collectionAPI={ctx.collectionAPI} />
+        <Showcase onViewChanged={() => {}} collectionAPI={ctx.collectionAPI} onReport={() => {}} />
       </div>
     </div>
   </div>)
