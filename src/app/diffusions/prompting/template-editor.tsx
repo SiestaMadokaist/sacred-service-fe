@@ -145,8 +145,7 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
     const updated: ITemplate = {
       ...ref,
       prompt: `(experimental):(0.001)\n${localTemplate}`,
-      nIter: 1,
-      seed: -1,
+      nIter: 1
     }
     const prompts: ITemplate[] = [...new Array(ctx.nIter)].map((x) => (updated))
     await ctx.pushQueue(prompts);

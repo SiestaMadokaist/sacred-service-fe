@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Button, Card, CardHeader } from "reactstrap";
 import { SYSTEM_ENV } from "../helper/env";
 import { AxiosInstance } from "axios";
-import { IconCheck, IconLock, IconX } from "@tabler/icons-react";
+import { IconCheck, IconCircle, IconCircle0Filled, IconCircleFilled, IconLock, IconX } from "@tabler/icons-react";
 import { getAuth, setAuth } from "../api/api";
 import { useRefState } from "../hooks/useRefState";
 
@@ -127,9 +127,9 @@ export const Showcase = (props: IShowcase): JSX.Element => {
   }
 
   const elem = connected ? (
-    <IconCheck onClick={resetWS} style={{ color: 'green', height: '2.5em', width: '2.5em' }} />
+    <IconCircleFilled onClick={resetWS} style={{ color: 'green', height: '2.5em', width: '2.5em' }} />
   ) : (
-    <IconX onClick={resetWS} style={{ color: 'red', height: '2.5em', width: '2.5em', cursor: 'pointer' }} />
+    <IconCircle onClick={resetWS} style={{ color: 'red', height: '2.5em', width: '2.5em', cursor: 'pointer' }} />
   );
 
 
@@ -137,9 +137,9 @@ export const Showcase = (props: IShowcase): JSX.Element => {
     <Card className="bg-white text-black w-100 h-100" style={{ overflow: 'hidden' }}>
       <CardHeader className="w-100 d-flex flex-wrap justify-content-center align-items center">
         {elem}
-        <Button style={{ fontSize: '0.875em' }} color="primary" className="w-25 ml-1" onClick={prev}>&lt;</Button>
+        <Button style={{ fontSize: '0.875em' }} color="primary" className="w-22 ml-1" onClick={prev}>&lt;</Button>
         <div style={{ display: reports.length > 0 ? 'block' : 'none' }} className="ml-2 w-20 justify-content-center align-items-center d-flex flex-wrap">{index + 1}/{reports.length}</div>
-        <Button style={{ fontSize: '0.875em' }} color="primary" className="w-25 ml-2" onClick={next}>&gt;</Button>
+        <Button style={{ fontSize: '0.875em' }} color="primary" className="w-22 ml-2" onClick={next}>&gt;</Button>
         <IconLock onClick={toggleLock} style={{ backgroundColor: locked ? "#0a58ca" : 'white', color: locked ? 'white' : '#0a58ca', cursor: 'pointer', height: '2.5em', width: '2.5em' }} className="ml-2" />
       </CardHeader>
       <div className="w-100 mt-2 d-flex flex-wrap justify-content-center align-items-center" onClick={copy} style={{ cursor: 'pointer', overflow: 'hidden' }}>

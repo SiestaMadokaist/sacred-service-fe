@@ -130,6 +130,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
   const computeAPI = useApi(hub, '/computes');
   const collectionAPI = useApi(hub, '/collections');
   const { toastElement, showToast } = useToast({ duration: 3000 });
+  const [subseed, setSubseed] = useState<number>(Math.floor(Math.random() * 100_000_000));
   const [variables, setVariables] = useState<Record<string, string>>({});
   const [varCounts, setVarCounts] = useState<Record<string, number>>({});
 
@@ -154,18 +155,21 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
     }
   }
   const pushQueue = async (ts: ITemplate[]) => {
-    const prompts: Partial<IGeneratePortrait>[] = ts.map((x) => {
+    const prompts: Partial<IGeneratePortrait>[] = ts.map((x, index) => {
       const prompt = buildPrompt(x.prompt);
       const negative = buildPrompt(x.prompt, { negative: true });
       const regPrompt = buildRegPrompt(x.prompt);
       const alwayson_scripts = buildAlwaysOnScripts(x.controlnet, regPrompt);
+      const initialSeed = x.seed ?? seed ?? -1;
+      const finalSubseed = initialSeed === -1 ? -1 : (subseed + index);
       return {
         ...x,
         prompt,
         negative_prompt: `${negative}\n${negativePrompt}`,
         alwayson_scripts,
         n_iter: x.nIter ?? nIter,
-        seed: x.seed ?? seed ?? Math.floor(Math.random() * 10_000_000),
+        seed: initialSeed,
+        subseed: finalSubseed,
       };
     });
     const defaultConfig = {
@@ -173,6 +177,8 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
       width: 1000,
       height: 1200,
       steps: stepCount,
+      subseed: -1,
+      subseed_strength: 0.05,
       sampler_name: 'DPM++ 2M Karras',
       seed: seed ?? Math.floor(Math.random() * 10_000_000),
     };

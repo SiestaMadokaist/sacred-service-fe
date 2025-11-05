@@ -70,8 +70,7 @@ export const AutocompleteTextarea = (props: IAutocompleteTextarea): JSX.Element 
     const t = token.trim();
     if (t.length >= minTriggerChars) {
       const lower = t.toLowerCase();
-      const uniq = Array.from(new Set(suggestions));
-      const list = uniq
+      const list = suggestions
         // prefix match first, then fallback to includes
         .filter((s) => s.toLowerCase().startsWith(lower) || s.toLowerCase().includes(lower))
         .slice(0, maxSuggestions);
@@ -109,7 +108,8 @@ export const AutocompleteTextarea = (props: IAutocompleteTextarea): JSX.Element 
       onSubmit(text);
       return;
     }
-    if (!open || filtered.length === 0) return; // nothing to do for navigation/acceptance
+    if (!open || filtered.length === 0) return; 
+    // nothing to do for navigation/acceptance
     if (e.ctrlKey && (e.key === "ArrowDown" || e.key === "ArrowRight")) {
       e.preventDefault();
       setHighlight((h) => (h + 1) % filtered.length);
