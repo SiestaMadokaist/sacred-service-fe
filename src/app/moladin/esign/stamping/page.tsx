@@ -6,6 +6,7 @@ import useLocalStorage from "use-local-storage";
 import axios, { AxiosError } from "axios";
 import { Button, Card, CardBody, Input, InputGroup, InputGroupText, Toast } from "reactstrap";
 import { SYSTEM_ENV } from "../../../../helper/env";
+import { StampJsonEditor } from "./stamp-json-editor";
 
 const defaultImages: string[] = [];
 
@@ -13,6 +14,7 @@ type STAMP_TYPE = 'VIDA' | 'IMAGE' | 'TEXT';
 
 export default function StampingPage(): JSX.Element {
   const [fileBase64, setFileBase64] = useState<string>('')
+  const [fileName, setFileName] = useState<string>('')
   const [signSrc, setSignSrc] = useLocalStorage<string>('signSrc', 'https://example.com/signature.png');
   const [images, setImages] = useState<string[]>(defaultImages);
   const [stamps, setStamps] = useState<IStamp[]>([]);
@@ -20,6 +22,7 @@ export default function StampingPage(): JSX.Element {
   const [devToken, setDevToken] = useLocalStorage<string>('devToken', '');
   const [toastMessage, setToastMessage] = useState<string>('');
   const [stampType, setStampType] = useState<STAMP_TYPE>('VIDA');
+  const [imagePrefix, setImagePrefix] = useState<string>('imagestamp');
 
   const showToast = (message: string, duration: number = 3_000) => {
     setToastMessage(message);
@@ -65,7 +68,7 @@ export default function StampingPage(): JSX.Element {
         stampType,
         canvas,
         coordinate,
-        name: `VIDA-${coordinate.page}-${coordinate.x}-${coordinate.y}`,
+        name: `VIDA-${coordinate.page}-${coordinate.x}-${coordinate.y}-${Date.now()}`,
         trigger: 'AUTO',
         codeDocument: 'VD001',
         style: {
@@ -78,7 +81,7 @@ export default function StampingPage(): JSX.Element {
         stampType,
         canvas,
         coordinate,
-        name: `IMAGE-${coordinate.page}-${coordinate.x}-${coordinate.y}`,
+        name: `IMAGE-${coordinate.page}-${coordinate.x}-${coordinate.y}-${Date.now()}`,
         trigger: 'AUTO',
         source: signSrc,
         style: {
@@ -91,7 +94,7 @@ export default function StampingPage(): JSX.Element {
         stampType,
         canvas,
         coordinate,
-        name: `TEXT-${coordinate.page}-${coordinate.x}-${coordinate.y}`,
+        name: `TEXT-${coordinate.page}-${coordinate.x}-${coordinate.y}-${Date.now()}`,
         trigger: 'AUTO',
         codeDocument: 'VD003',
         source: "",
@@ -107,16 +110,14 @@ export default function StampingPage(): JSX.Element {
   }
 
   const sortedStamps = [...stamps].sort((a, b) => {
-    if (a.stampType === 'VIDA') return -1
-    if (b.stampType === 'VIDA') return 1
-    return 0
+    return (a.coordinate.page - b.coordinate.page) || (a.coordinate.y - b.coordinate.y) || (a.coordinate.x - b.coordinate.x);
   }).map((x) => {
     if (x.stampType !== 'IMAGE') { return x; }
     return { ...x, source: signSrc }
   })
 
   const vidaStamps = sortedStamps.filter(x => x.stampType === 'VIDA').map((x, i) => ({ ...x, name: `vidastamp${i + 1}` }));
-  const imageStamps = sortedStamps.filter(x => x.stampType === 'IMAGE').map((x, i) => ({ ...x, name: `imagestamp${i + 1}` }));
+  const imageStamps = sortedStamps.filter(x => x.stampType === 'IMAGE').map((x, i) => ({ ...x, name: `${imagePrefix}${i + 1}` }));
   const textStamps = sortedStamps.filter(x => x.stampType === 'TEXT').map((x, i) => ({ ...x, name: `textstamp${i + 1}` }));
 
   const textAreaBody = [...vidaStamps, ...imageStamps, ...textStamps];
@@ -130,6 +131,9 @@ export default function StampingPage(): JSX.Element {
     if (file.type !== 'application/pdf') {
       showToast('File must be a PDF');
     }
+    setFileName(file.name);
+    setStamps([]);
+    setPage(0);
     const reader = new FileReader();
     const blob = new Blob([file], { type: 'application/pdf' });
     reader.readAsDataURL(blob);
@@ -149,8 +153,35 @@ export default function StampingPage(): JSX.Element {
     }
   }, [fileBase64])
 
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      prev();
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      next();
+    }
+  }
   const primaryIf = (type: STAMP_TYPE) => {
     return stampType === type ? 'primary' : 'secondary';
+  }
+
+  const getStampedPages = () => {
+    const pages = new Set<number>();
+    stamps.forEach(stamp => {
+      pages.add(stamp.coordinate.page);
+    });
+    return Array.from(pages).sort((a, b) => a - b);
+  }
+
+  const getStampCounts = () => {
+    const counts = { VIDA: 0, IMAGE: 0, TEXT: 0 };
+    stamps.forEach(stamp => {
+      if (stamp.stampType === 'VIDA') counts.VIDA++;
+      else if (stamp.stampType === 'IMAGE') counts.IMAGE++;
+      else if (stamp.stampType === 'TEXT') counts.TEXT++;
+    });
+    return counts;
   }
 
   return (<div className="d-flex">
@@ -168,8 +199,47 @@ export default function StampingPage(): JSX.Element {
           <Button onClick={prev} color="primary" style={{ width: '48%', margin: '1%' }}>&lt;</Button>
           <Button onClick={next} color="primary" style={{ width: '48%', margin: '1%' }}>&gt;</Button>
         </div>
-        <CardBody style={{ backgroundColor: '#333' }}>
-          <div style={{ color: 'wheat', margin: '1%' }}>Page: {page} / {images.length}</div>
+        <CardBody onKeyDown={(e) => handleKeyDown(e as { key: any } as KeyboardEvent)} style={{ backgroundColor: '#333' }}>
+          <div style={{ color: 'wheat', margin: '1%' }}>
+            <div style={{ display: 'flex', gap: '1%', marginBottom: '0.5%', fontSize: '0.9em' }}>
+              {(() => {
+                const counts = getStampCounts();
+                const countStyle = {
+                  width: '30%',
+                  padding: '0.5%',
+                  borderRadius: '4px',
+                  border: '1px solid',
+                  textAlign: 'center' as const,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                };
+                return (
+                  <>
+                    {counts.VIDA > 0 && <div onClick={() => setStampType('VIDA')} style={{ ...countStyle, backgroundColor: '#471a1a', borderColor: '#FF5252', color: '#FF6B6B', opacity: stampType === 'VIDA' ? 1 : 0.7 }}>VIDA: {counts.VIDA}x</div>}
+                    {counts.IMAGE > 0 && <div onClick={() => setStampType('IMAGE')} style={{ ...countStyle, backgroundColor: '#1a2a47', borderColor: '#2196F3', color: '#64B5F6', opacity: stampType === 'IMAGE' ? 1 : 0.7 }}>IMAGE: {counts.IMAGE}x</div>}
+                    {counts.TEXT > 0 && <div onClick={() => setStampType('TEXT')} style={{ ...countStyle, backgroundColor: '#1a472a', borderColor: '#4CAF50', color: '#76ff03', opacity: stampType === 'TEXT' ? 1 : 0.7 }}>TEXT: {counts.TEXT}x</div>}
+                  </>
+                );
+              })()}
+            </div>
+            <div style={{ marginTop: '1%', marginBottom: '0.5%' }}>Page: {page} / {images.length}</div>
+            {getStampedPages().length > 0 && (
+              <div style={{ display: 'flex', gap: '0.5%', flexWrap: 'wrap', alignItems: 'center' }}>
+                <span style={{ color: '#aaa', fontSize: '0.9em' }}>Stamped pages:</span>
+                {getStampedPages().map((stampedPage) => (
+                  <Button
+                    key={stampedPage}
+                    onClick={() => setPage(stampedPage)}
+                    color={stampedPage === page ? 'success' : 'info'}
+                    size="sm"
+                    style={{ padding: '0.3% 0.8%', fontSize: '0.85em' }}
+                  >
+                    {stampedPage}
+                  </Button>
+                ))}
+              </div>
+            )}
+          </div>
           <PDFPage page={page} src={image} stamps={stamps} addStamp={addStamp} removeStamp={removeStamp}></PDFPage>
         </CardBody>
       </Card>
@@ -188,7 +258,21 @@ export default function StampingPage(): JSX.Element {
         <Button onClick={() => setStampType("IMAGE")} style={{ width: '31%', margin: '1%' }} color={primaryIf("IMAGE")}>IMAGE</Button>
         <Button onClick={() => setStampType("TEXT")} style={{ width: '31%', margin: '1%' }} color={primaryIf("TEXT")}>TEXT</Button>
       </div>
-      <textarea readOnly style={{ fontSize: '0.8em', width: '98%', margin: '1%' }} cols={60} rows={20} value={JSON.stringify(textAreaBody, null, 2)}></textarea>
+      <StampJsonEditor data={textAreaBody} fileName={fileName} onUpdate={(updated) => {
+        setStamps(updated);
+        // Extract image prefix from first IMAGE stamp if it exists
+        const firstImageStamp = updated.find((stamp: any) => stamp.stampType === 'IMAGE');
+        if (firstImageStamp && firstImageStamp.name) {
+          // Extract prefix by removing trailing numbers
+          const match = firstImageStamp.name.match(/^(.*?)(\d+)$/);
+          if (match) {
+            const extractedPrefix = match[1];
+            if (extractedPrefix.startsWith('ttd-')) {
+              setImagePrefix(extractedPrefix);
+            }
+          }
+        }
+      }} />
     </div>
   </div>)
 }

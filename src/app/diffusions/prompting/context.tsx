@@ -130,7 +130,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
   const computeAPI = useApi(hub, '/computes');
   const collectionAPI = useApi(hub, '/collections');
   const { toastElement, showToast } = useToast({ duration: 3000 });
-  const [subseed, setSubseed] = useState<number>(Math.floor(Math.random() * 100_000_000));
+  const [subseed] = useState<number>(Math.floor(Math.random() * 100_000_000));
   const [variables, setVariables] = useState<Record<string, string>>({});
   const [varCounts, setVarCounts] = useState<Record<string, number>>({});
 
