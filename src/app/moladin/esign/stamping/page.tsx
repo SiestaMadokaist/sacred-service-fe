@@ -109,6 +109,11 @@ export default function StampingPage(): JSX.Element {
     setStamps(stamps.filter(stamp => stamp.name !== name));
   }
 
+  const duplicateStamp = (stamp: IStamp) => {
+    const newStamp = { ...stamp };
+    setStamps([...stamps, newStamp]);
+  }
+
   const sortedStamps = [...stamps].sort((a, b) => {
     return (a.coordinate.page - b.coordinate.page) || (a.coordinate.y - b.coordinate.y) || (a.coordinate.x - b.coordinate.x);
   }).map((x) => {
@@ -240,7 +245,7 @@ export default function StampingPage(): JSX.Element {
               </div>
             )}
           </div>
-          <PDFPage page={page} src={image} stamps={stamps} addStamp={addStamp} removeStamp={removeStamp}></PDFPage>
+          <PDFPage page={page} src={image} stamps={stamps} addStamp={addStamp} removeStamp={removeStamp} duplicateStamp={duplicateStamp}></PDFPage>
         </CardBody>
       </Card>
     </div>
