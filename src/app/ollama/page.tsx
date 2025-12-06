@@ -1,17 +1,46 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Container, Row, Col, Form, FormGroup, Label, Input, Button, Alert } from "reactstrap";
-import axios from "axios";
 import useLocalStorage from "use-local-storage";
+import OpenAI from "openai";
 
 const OllamaPage: React.FC = () => {
-  const [systemPrompt, setSystemPrompt] = useLocalStorage("ollama_system_prompt", "");
-  const [userPrompt, setUserPrompt] = useLocalStorage("ollama_user_prompt", "");
+  const [openAIKey, setOpenAIKey] = useLocalStorage("openai_api", "");
+  const [selectedModel, setSelectedModel] = useLocalStorage("openai_model", "gpt-4o-mini");
+  const [systemPrompt, setSystemPrompt] = useLocalStorage("openai_system_prompt", "");
+  const [userPrompt, setUserPrompt] = useLocalStorage("openai_user_prompt", "");
   const [response, setResponse] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const [duration, setDuration] = useState<number | null>(null);
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [client, setClient] = useState<OpenAI | null>(null);
+
+  useEffect(() => {
+    if (!openAIKey) {
+      setClient(null);
+      return;
+    }
+
+    const newClient = new OpenAI({
+      apiKey: openAIKey,
+      dangerouslyAllowBrowser: true
+    });
+    setClient(newClient);
+
+    const fetchModels = async () => {
+      try {
+        const models = await newClient.models.list();
+        const modelIds = models.data.map((model) => model.id).sort();
+        setAvailableModels(modelIds);
+      } catch (err) {
+        console.error("Failed to fetch models:", err);
+      }
+    };
+
+    fetchModels();
+  }, [openAIKey]);
 
   const handleCopyResponse = async () => {
     try {
@@ -25,7 +54,7 @@ const OllamaPage: React.FC = () => {
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (loading) return;
+    if (loading || !client) return;
 
     setLoading(true);
     setError("");
@@ -35,8 +64,8 @@ const OllamaPage: React.FC = () => {
     const startTime = performance.now();
 
     try {
-      const payload = {
-        model: "qwen3:8b",
+      const completion = await client.chat.completions.create({
+        model: selectedModel,
         messages: [
           {
             role: "system",
@@ -47,17 +76,16 @@ const OllamaPage: React.FC = () => {
             content: userPrompt
           }
         ],
-        stream: false
-      };
-
-      const result = await axios.post("http://localhost:11434/api/chat", payload);
+        temperature: 0.7,
+        // max_tokens: 1000
+      });
       const endTime = performance.now();
       setDuration(endTime - startTime);
-      setResponse(result.data.message?.content || JSON.stringify(result.data));
+      setResponse(completion.choices[0]?.message?.content || "No response");
     } catch (err: any) {
       const endTime = performance.now();
       setDuration(endTime - startTime);
-      setError(err.message || "Failed to connect to Ollama");
+      setError(err.message || "Failed to connect to OpenAI");
     } finally {
       setLoading(false);
     }
@@ -74,8 +102,40 @@ const OllamaPage: React.FC = () => {
     <Container fluid className="py-4">
       <Row>
         <Col md={6}>
-          <h2 className="mb-4 text-light">Ollama Chat</h2>
+          <h2 className="mb-4 text-light">OpenAI Chat</h2>
           <Form onSubmit={handleSubmit}>
+            <FormGroup>
+              <Label for="openAIKey" className="text-light fw-bold">OpenAI API Key</Label>
+              <Input
+                type="password"
+                id="openAIKey"
+                placeholder="Enter your OpenAI API key (saved to localStorage)"
+                value={openAIKey}
+                onChange={(e) => setOpenAIKey(e.target.value)}
+              />
+            </FormGroup>
+
+            <FormGroup>
+              <Label for="modelSelect" className="text-light fw-bold">Model</Label>
+              <Input
+                type="select"
+                id="modelSelect"
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value)}
+                disabled={availableModels.length === 0}
+              >
+                {availableModels.length === 0 ? (
+                  <option>Loading models...</option>
+                ) : (
+                  availableModels.map((model) => (
+                    <option key={model} value={model}>
+                      {model}
+                    </option>
+                  ))
+                )}
+              </Input>
+            </FormGroup>
+
             <FormGroup>
               <Label for="systemPrompt" className="text-light fw-bold">System Prompt</Label>
               <Input

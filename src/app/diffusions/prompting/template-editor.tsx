@@ -4,6 +4,8 @@ import { Button, Col, Input, Label, Row } from "reactstrap";
 import { useDebounce } from "use-debounce";
 import { ImageUrlDropzone } from "../../../components/DragNDrop/ImageURLDropzone";
 import { AutocompleteTextarea } from "@/components/autocomplete";
+import OpenAI from "openai";
+import useLocalStorage from "use-local-storage";
 
 export interface ITemplateEditor {
   index: number;
@@ -39,6 +41,11 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>(props.template.orientation ?? 'portrait');
   const [valid, setValid] = useState(true);
   const [controlnetImage, setControlnetImage] = useState<string | undefined>();
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const [openAIKey] = useLocalStorage("openai_api", "");
+  const [selectedModel] = useLocalStorage("openai_model", "gpt-4o-mini");
+  const [systemPrompt] = useLocalStorage("openai_system_prompt", "");
 
   useEffect(() => {
     setOrientation(props.template.orientation ?? 'portrait');
@@ -115,7 +122,7 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
     let updatedTemplate = debouncedTemplate;
     for (const [leakingKey, leakingValue] of leaks) {
       const regex = new RegExp(leakingValue, 'g');
-      updatedTemplate = updatedTemplate.replace(regex, `{${leakingKey}}`);
+      updatedTemplate = updatedTemplate.replace(regex, `{${leakingKey}}\n`);
     }
     setValid(true);
     ctx.setTemplate(props.index, { prompt: updatedTemplate, ...resolution(), orientation, });
@@ -158,6 +165,46 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
     }
   }
 
+  const enhanceWithAI = async () => {
+    setAiLoading(true);
+    try {
+      if (!openAIKey) {
+        ctx.showToast({ title: 'Error', message: 'OpenAI API key not found in localStorage', level: 'danger', show: true });
+        return;
+      }
+
+      const client = new OpenAI({
+        apiKey: openAIKey,
+        dangerouslyAllowBrowser: true
+      });
+
+      const builtPrompt = ctx.buildPrompt(localTemplate);
+
+      const completion = await client.chat.completions.create({
+        model: selectedModel,
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt
+          },
+          {
+            role: "user",
+            content: builtPrompt
+          }
+        ],
+        temperature: 0.7,
+      });
+
+      const response = completion.choices[0]?.message?.content || "";
+      setLocalTemplate(response);
+      ctx.setTemplate(props.index, { ...ctx.templates[props.index], prompt: response });
+    } catch (err: any) {
+      ctx.showToast({ title: 'AI Error', message: err.message || 'Failed to enhance prompt', level: 'danger', show: true });
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
   return (<div className="d-flex w-100 flex-wrap">
     <Row className="mt-2 d-flex flex-wrap w-100" style={{ borderBottom: '2px solid #2c3e3f', paddingBottom: '0.5rem' }}>
       <Col>
@@ -169,7 +216,12 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
           suggestions={Object.keys(ctx.variables).map((k) => `{${k}}`)}
           style={{ ...colorProperties }}
         >
-          <Button onClick={pushQueue} style={{ color: 'yellow' }} className="mt-2 w-100" color="success">Queue Single</Button>
+          <div className="d-flex w-100 mt-2 gap-2">
+            <Button onClick={pushQueue} style={{ color: 'yellow', width: '80%' }} color="success">Queue Single</Button>
+            <Button onClick={enhanceWithAI} disabled={aiLoading} style={{ width: '20%' }} color="primary">
+              {aiLoading ? "..." : "AI"}
+            </Button>
+          </div>
         </AutocompleteTextarea>
       </Col>
       <Col sm="2" className="d-flex flex-wrap justify-content-center align-items-center">
