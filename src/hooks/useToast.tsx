@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Toast, ToastBody, ToastHeader } from "reactstrap";
 export interface IUseToast {
   duration: number;
@@ -17,6 +17,14 @@ interface IToastWithId extends IToast {
 export const useToast = (props: IUseToast) => {
   const [toasts, setToasts] = useState<IToastWithId[]>([]);
   const { duration } = props;
+  const timersRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
+
+  useEffect(() => {
+    return () => {
+      timersRef.current.forEach(timer => clearTimeout(timer));
+      timersRef.current.clear();
+    };
+  }, []);
 
   const showToast = (params: IToast) => {
     const id = Date.now();
@@ -24,12 +32,20 @@ export const useToast = (props: IUseToast) => {
 
     setToasts(prev => [...prev, newToast]);
 
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       setToasts(prev => prev.filter(toast => toast.id !== id));
+      timersRef.current.delete(id);
     }, duration);
+
+    timersRef.current.set(id, timer);
   }
 
   const removeToast = (id: number) => {
+    const timer = timersRef.current.get(id);
+    if (timer) {
+      clearTimeout(timer);
+      timersRef.current.delete(id);
+    }
     setToasts(prev => prev.filter(toast => toast.id !== id));
   }
 

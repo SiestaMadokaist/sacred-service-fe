@@ -3,12 +3,25 @@ import React, { useEffect, useState } from "react";
 import { Container, Form, FormGroup, Label, Input, Button, Alert, Toast, ToastBody, ToastHeader } from "reactstrap";
 import { useToast } from "../hooks/useToast";
 import { useLoginAPI } from "../hooks/useApi";
+import { useMetaMask } from "../hooks/useMetaMask";
 import { apiHub } from "../api/hub";
 import { IAuth, setAuth } from "../api/api";
 
 const divDisplay = (condition: boolean, show: string, hide: string) => ({ display: condition ? show : hide });
 
-const LoginModal: React.FC<{ onSubmit: (e: React.FormEvent) => Promise<void>; setUsername: (val: string) => void; setPassword: (val: string) => void; username: string; password: string; error: string; toggle: () => void; }> = ({ onSubmit, setUsername, setPassword, username, password, error, toggle }) => (
+const LoginModal: React.FC<{
+  onSubmit: (e: React.FormEvent) => Promise<void>;
+  setUsername: (val: string) => void;
+  setPassword: (val: string) => void;
+  username: string;
+  password: string;
+  error: string;
+  toggle: () => void;
+  onMetaMaskLogin: () => Promise<void>;
+  isMetaMaskInstalled: boolean;
+  isMetaMaskConnecting: boolean;
+  metamaskError: string | null;
+}> = ({ onSubmit, setUsername, setPassword, username, password, error, toggle, onMetaMaskLogin, isMetaMaskInstalled, isMetaMaskConnecting, metamaskError }) => (
   <div className="w-50 p-4 border rounded shadow-sm bg-light">
     <h2 className="text-center mb-4">Login</h2>
     <Form onSubmit={onSubmit}>
@@ -23,6 +36,29 @@ const LoginModal: React.FC<{ onSubmit: (e: React.FormEvent) => Promise<void>; se
       </FormGroup>
       <Button color="primary" block type="submit">Login</Button>
     </Form>
+    <div className="text-center my-3">
+      <span className="text-muted">or</span>
+    </div>
+    {metamaskError && <Alert color="danger">{metamaskError}</Alert>}
+    {isMetaMaskInstalled ? (
+      <Button
+        color="warning"
+        block
+        onClick={onMetaMaskLogin}
+        disabled={isMetaMaskConnecting}
+      >
+        {isMetaMaskConnecting ? 'Connecting...' : 'Login with MetaMask'}
+      </Button>
+    ) : (
+      <Button
+        color="secondary"
+        block
+        disabled
+        title="Please install MetaMask browser extension"
+      >
+        MetaMask Not Installed
+      </Button>
+    )}
     <Button color="link" block onClick={toggle}>Need an account? Register</Button>
   </div>
 );
@@ -61,6 +97,14 @@ const LoginPage: React.FC = () => {
   const { toastElement, showToast } = useToast({ duration: 3000 });
   const [authorized, setAuthorized] = useState(false);
   const hub = apiHub();
+
+  const {
+    loginWithMetaMask,
+    isConnecting: isMetaMaskConnecting,
+    error: metamaskError,
+    isMetaMaskInstalled,
+  } = useMetaMask(hub);
+
   useEffect(() => {
     hub.on('api-error', (err) => {
       showToast({ show: true, title: `Error Code: ${err.statusCode}`, message: JSON.stringify(err.data) });
@@ -90,6 +134,20 @@ const LoginPage: React.FC = () => {
     }
   };
 
+  const handleMetaMaskLogin = async () => {
+    const success = await loginWithMetaMask();
+    if (success) {
+      setAuthorized(true);
+      showToast({ show: true, title: 'Success', message: 'Logged in with MetaMask!', level: 'success' });
+      if (location.href.includes("prev=")) {
+        const prev = new URLSearchParams(location.search).get("prev");
+        if (prev) {
+          window.location.href = decodeURIComponent(prev);
+        }
+      }
+    }
+  };
+
   const handleLogout = () => {
     setAuth({ token: "", exp: 0, iat: 0, sub: "", claim: {}, sessionId: "" });
     setAuthorized(false);
@@ -102,7 +160,19 @@ const LoginPage: React.FC = () => {
       ) : isRegistering ? (
         <RegisterModal onSubmit={handleSubmit} setUsername={setUsername} setPassword={setPassword} username={username} password={password} error={error} toggle={() => setIsRegistering(false)} />
       ) : (
-        <LoginModal onSubmit={handleSubmit} setUsername={setUsername} setPassword={setPassword} username={username} password={password} error={error} toggle={() => setIsRegistering(true)} />
+        <LoginModal
+          onSubmit={handleSubmit}
+          setUsername={setUsername}
+          setPassword={setPassword}
+          username={username}
+          password={password}
+          error={error}
+          toggle={() => setIsRegistering(true)}
+          onMetaMaskLogin={handleMetaMaskLogin}
+          isMetaMaskInstalled={isMetaMaskInstalled}
+          isMetaMaskConnecting={isMetaMaskConnecting}
+          metamaskError={metamaskError}
+        />
       )}
       {toastElement}
     </Container>
