@@ -10,6 +10,7 @@ export interface IAutocompleteTextarea {
   minTriggerChars?: number; // minimum chars of the current token to start suggesting
   onChange: (value: string) => void;
   onSubmit: (value: string) => void; // trigger when ctrl+enter pressed
+  onSave: () => void; // trigger when template is saved
   className?: string;
   children?: React.ReactNode;
   style?: React.CSSProperties;
@@ -106,6 +107,11 @@ export const AutocompleteTextarea = (props: IAutocompleteTextarea): JSX.Element 
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       onSubmit(text);
+      return;
+    }
+    if (e.key === "s" && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      props.onSave();
       return;
     }
     if (!open || filtered.length === 0) return; 

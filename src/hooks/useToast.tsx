@@ -10,25 +10,43 @@ export interface IToast {
   title: string;
 }
 
-const divDisplay = (condition: boolean, show: string, hide: string) => ({ display: condition ? show : hide });
+interface IToastWithId extends IToast {
+  id: number;
+}
 
 export const useToast = (props: IUseToast) => {
-  const noToast: IToast = { show: false, message: '', title: '', level: 'info' };
-  const [toastMessage, setToastMessage] = useState<IToast>(noToast);
+  const [toasts, setToasts] = useState<IToastWithId[]>([]);
   const { duration } = props;
+
   const showToast = (params: IToast) => {
-    setToastMessage({ ...params, show: true });
-    setTimeout(() => setToastMessage(noToast), duration);
+    const id = Date.now();
+    const newToast: IToastWithId = { ...params, show: true, id };
+
+    setToasts(prev => [...prev, newToast]);
+
+    setTimeout(() => {
+      setToasts(prev => prev.filter(toast => toast.id !== id));
+    }, duration);
   }
-  const toastElement = (<div className="position-fixed bottom-0 end-0 p-3" style={{ zIndex: 5, ...divDisplay(toastMessage.show, "block", "none") }}>
-    <Toast isOpen={toastMessage.show}>
-      <ToastHeader icon={toastMessage.level ?? 'danger'} toggle={() => setToastMessage(noToast)}>
-        {toastMessage.title}
-      </ToastHeader>
-      <ToastBody>
-        {toastMessage.message ?? "Unknown Error"}
-      </ToastBody>
-    </Toast>
-  </div>)
+
+  const removeToast = (id: number) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
+  }
+
+  const toastElement = (
+    <div className="position-fixed bottom-0 end-0 p-3" style={{ zIndex: 5 }}>
+      {toasts.map((toast, index) => (
+        <Toast key={toast.id} isOpen={toast.show} className="mb-2">
+          <ToastHeader icon={toast.level ?? 'danger'} toggle={() => removeToast(toast.id)}>
+            {toast.title}
+          </ToastHeader>
+          <ToastBody>
+            {toast.message ?? "Unknown Error"}
+          </ToastBody>
+        </Toast>
+      ))}
+    </div>
+  );
+
   return { showToast, toastElement };
 }

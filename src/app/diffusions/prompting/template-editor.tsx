@@ -51,6 +51,20 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
     setOrientation(props.template.orientation ?? 'portrait');
   }, [ctx.templateId])
 
+  const onSave = () => {
+    const { promptAPI, showToast } = ctx;
+    const { templateId } = ctx;
+    if (!templateId) {
+      showToast({ title: 'Save Failed', message: 'TemplateID is blank', level: 'danger', show: true });
+      return;
+    }
+    promptAPI.post(`/`, {
+      templateId,
+      templates: ctx.templates.filter((x) => x.prompt.length > 0),
+      variables: ctx.variables,
+    });
+  }
+
   const valueLeak = (t: string, vars: Record<string, string>): [string, string][] => {
     const keys = Object.keys(vars);
     const leaks: [string, string][] = [];
@@ -215,6 +229,7 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
         <AutocompleteTextarea
           className="h-80"
           value={localTemplate}
+          onSave={onSave}
           onSubmit={pushQueue}
           onChange={setLocalTemplate}
           suggestions={Object.keys(ctx.variables).map((k) => `{${k}}`)}
