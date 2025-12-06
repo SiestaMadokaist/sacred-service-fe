@@ -179,7 +179,7 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
       });
 
       const builtPrompt = ctx.buildPrompt(localTemplate);
-
+      const tags: Set<string> = new Set(builtPrompt.split(/[,\n]/).map(t => t.trim()).filter(t => t.length > 0));
       const completion = await client.chat.completions.create({
         model: selectedModel,
         messages: [
@@ -196,8 +196,12 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
       });
 
       const response = completion.choices[0]?.message?.content || "";
-      setLocalTemplate(response);
-      ctx.setTemplate(props.index, { ...ctx.templates[props.index], prompt: response });
+      const responseTags = new Set(response.split(/[,\n]/).map(t => t.trim()).filter(t => t.length > 0));
+      const removedTags = Array.from(tags).filter(t => !responseTags.has(t));
+      const cleanedResponse = `${response}\n\n#Removed Tags:\n${removedTags.join(', ')}`;
+      console.log({ tags, responseTags, removedTags, cleanedResponse });
+      setLocalTemplate(cleanedResponse);
+      ctx.setTemplate(props.index, { ...ctx.templates[props.index], prompt: cleanedResponse });
     } catch (err: any) {
       ctx.showToast({ title: 'AI Error', message: err.message || 'Failed to enhance prompt', level: 'danger', show: true });
     } finally {

@@ -169,7 +169,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
         alwayson_scripts,
         n_iter: x.nIter ?? nIter,
         seed: initialSeed,
-        subseed: finalSubseed,
+        subseed: finalSubseed === -1 ? undefined : finalSubseed,
       };
     });
     const defaultConfig = {
@@ -177,7 +177,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
       width: 1000,
       height: 1200,
       steps: stepCount,
-      subseed: -1,
+      subseed: undefined,
       subseed_strength: 0.05,
       sampler_name: 'DPM++ 2M Karras',
       seed: seed ?? Math.floor(Math.random() * 10_000_000),
