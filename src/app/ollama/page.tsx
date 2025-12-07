@@ -3,12 +3,26 @@ import React, { useState, useEffect } from "react";
 import { Container, Row, Col, Form, FormGroup, Label, Input, Button, Alert } from "reactstrap";
 import useLocalStorage from "use-local-storage";
 import OpenAI from "openai";
+import { useDebounce } from "use-debounce";
+
+const customParameters = {
+  "temperature": "number (0-2) 0.7 is a good default, 0 is deterministic, 2 is very creative",
+  "top_p": "number (0-1), alternative to sampling with temperature",
+  "n": "number (number of responses)",
+  "stream": "boolean",
+  "max_tokens": "number (alias: max_output_tokens)",
+  "max_output_tokens": "number",
+  "tool_choice": "auto | none | {\"type\": \"function\", \"function\": {\"name\": \"string\"}}",
+  "parallel_tool_calls": "boolean",
+}
+
 
 const OllamaPage: React.FC = () => {
   const [openAIKey, setOpenAIKey] = useLocalStorage("openai_api", "");
   const [selectedModel, setSelectedModel] = useLocalStorage("openai_model", "gpt-4o-mini");
   const [systemPrompt, setSystemPrompt] = useLocalStorage("openai_system_prompt", "");
   const [userPrompt, setUserPrompt] = useLocalStorage("openai_user_prompt", "");
+  const [customParamsText, setCustomParamsText] = useLocalStorage("openai_custom_params", JSON.stringify(customParameters, null, 2));
   const [response, setResponse] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -16,6 +30,20 @@ const OllamaPage: React.FC = () => {
   const [duration, setDuration] = useState<number | null>(null);
   const [availableModels, setAvailableModels] = useState<string[]>([]);
   const [client, setClient] = useState<OpenAI | null>(null);
+  const [jsonError, setJsonError] = useState<string>("");
+  const [parsedParams, setParsedParams] = useState<Record<string, any>>({});
+  const [debouncedParamsText] = useDebounce(customParamsText, 500);
+
+  useEffect(() => {
+    try {
+      const parsed = JSON.parse(debouncedParamsText);
+      setParsedParams(parsed);
+      setJsonError("");
+    } catch (err: any) {
+      setJsonError(err.message);
+      setParsedParams({});
+    }
+  }, [debouncedParamsText]);
 
   useEffect(() => {
     if (!openAIKey) {
@@ -52,6 +80,10 @@ const OllamaPage: React.FC = () => {
     }
   };
 
+  const resetCustomParams = () => {
+    setCustomParamsText(JSON.stringify(customParameters, null, 2));
+  };
+
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (loading || !client) return;
@@ -76,8 +108,7 @@ const OllamaPage: React.FC = () => {
             content: userPrompt
           }
         ],
-        temperature: 0.7,
-        // max_tokens: 1000
+        ...parsedParams
       });
       const endTime = performance.now();
       setDuration(endTime - startTime);
@@ -161,7 +192,31 @@ const OllamaPage: React.FC = () => {
               />
             </FormGroup>
 
-            <Button style={{ width: '100%' }} color="primary" type="submit" disabled={loading}>
+            <FormGroup>
+              <div className="d-flex justify-content-between align-items-center mb-2">
+                <Label for="customParams" className="text-light fw-bold mb-0">Custom Parameters (JSON)</Label>
+                <Button size="sm" color="secondary" onClick={resetCustomParams}>
+                  Reset
+                </Button>
+              </div>
+              <Input
+                type="textarea"
+                id="customParams"
+                rows={4}
+                placeholder="Enter custom parameters as JSON"
+                value={customParamsText}
+                onChange={(e) => setCustomParamsText(e.target.value)}
+                style={{
+                  backgroundColor: jsonError ? "#6b1f1f" : undefined,
+                  color: jsonError ? "#f8d1d1" : undefined
+                }}
+              />
+              {jsonError && (
+                <small className="text-danger">Invalid JSON: {jsonError}</small>
+              )}
+            </FormGroup>
+
+            <Button style={{ width: '100%' }} color="primary" type="submit" disabled={loading || !!jsonError}>
               {loading ? "Submitting..." : "Submit"}
             </Button>
           </Form>
