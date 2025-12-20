@@ -4,6 +4,49 @@ import { createContext, ReactNode, useContext, useEffect, useRef, useState } fro
 import { apiHub, initShowHub, ShowHub } from "../../../api/hub";
 import { useApi } from "../../../hooks/useApi";
 import { SYSTEM_ENV } from "../../../helper/env";
+import useLocalStorage from "use-local-storage";
+
+export type SamplingMethod =
+  | 'Euler'
+  | 'Euler a'
+  | 'DPM++ 2M'
+  | 'DPM++ SDE'
+  | 'DPM++ 2M Karras'
+  | 'DPM++ SDE Karras'
+  | 'DPM++ 2M SDE'
+  | 'DPM++ 2M SDE Karras'
+  | 'DDIM'
+  | 'PLMS'
+  | 'UniPC';
+
+export type SamplingSchedule =
+  | 'Automatic'
+  | 'Karras'
+  | 'Exponential'
+  | 'Polyexponential'
+  | 'SGM Uniform';
+
+export const SAMPLING_METHODS: SamplingMethod[] = [
+  'Euler',
+  'Euler a',
+  'DPM++ 2M',
+  'DPM++ SDE',
+  'DPM++ 2M Karras',
+  'DPM++ SDE Karras',
+  'DPM++ 2M SDE',
+  'DPM++ 2M SDE Karras',
+  'DDIM',
+  'PLMS',
+  'UniPC'
+];
+
+export const SAMPLING_SCHEDULES: SamplingSchedule[] = [
+  'Automatic',
+  'Karras',
+  'Exponential',
+  'Polyexponential',
+  'SGM Uniform'
+];
 
 type RATIO = `${number}${string|","}${number}`
 interface IRegionalPrompterArgs {
@@ -92,11 +135,15 @@ interface IPromptingContext {
   activeIndex: number;
   nIter: number;
   stepCount: number;
+  samplingMethod: SamplingMethod;
+  samplingSchedule: SamplingSchedule;
   showImage: (imgURL: string) => void;
   setNIter: (nIter: number) => void;
   setSeed: (seed: number) => void;
   seed: number;
   setStepCount: (stepCount: number) => void;
+  setSamplingMethod: (method: SamplingMethod) => void;
+  setSamplingSchedule: (schedule: SamplingSchedule) => void;
   setVariables: (variables: Record<string, string>) => void;
   getPrompts: () => string;
   buildPrompt: (template: string) => string;
@@ -130,15 +177,22 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
   const computeAPI = useApi(hub, '/computes');
   const collectionAPI = useApi(hub, '/collections');
   const { toastElement, showToast } = useToast({ duration: 3000 });
-  const [subseed] = useState<number>(Math.floor(Math.random() * 100_000_000));
+  const [subseed] = useState<number>(-1);
   const [variables, setVariables] = useState<Record<string, string>>({});
   const [varCounts, setVarCounts] = useState<Record<string, number>>({});
 
   const [templates, _setTemplates] = useState<ITemplate[]>([]);
   const [templateId, setTemplateId] = useState<string>('');
   const [activeIndex, setActiveIndex] = useState<number>(0);
-  const [nIter, setNIter] = useState<number>(1);
-  const [stepCount, setStepCount] = useState<number>(30);
+  const [nIter, setNIter] = useLocalStorage<number>('diffusions.nIter', 2);
+  const [stepCount, setStepCount] = useLocalStorage<number>('diffusions.stepCount', 30);
+  const [samplingMethod, setSamplingMethod] = useLocalStorage<SamplingMethod>('diffusions.method', 'DPM++ 2M');
+  const [samplingSchedule, setSamplingSchedule] = useLocalStorage<SamplingSchedule>('diffusions.schedule', 'Automatic');
+
+  // Build sampler name: combine method and schedule, but only add schedule if it's not "Automatic"
+  const samplerName = samplingSchedule === 'Automatic'
+    ? samplingMethod
+    : `${samplingMethod} ${samplingSchedule}`;
 
   const buildAlwaysOnScripts = (controlnet?: ITemplate['controlnet'], regPrompt?: IRegionalPrompterArgs): undefined | { controlnet?: ITemplate['controlnet'], "Regional Prompter"?: IRegionalPrompterArgs } => {
     if (controlnet && regPrompt) {
@@ -179,7 +233,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
       steps: stepCount,
       subseed: undefined,
       subseed_strength: 0.05,
-      sampler_name: 'DPM++ 2M Karras',
+      sampler_name: samplerName,
       seed: seed ?? Math.floor(Math.random() * 10_000_000),
     };
     const actionId = buildPrompt(templateId);
@@ -287,7 +341,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
     }).replace(/{(.*?)}/g, (_, p1) => {
       const key = p1.trim();
       const value = variables[key];
-      return value ?? `{${key}}`;
+      return value ? `(( ${value} ))` : `{${key}}`;
     });
     // split by comma or newline, trim spaces, to lower case, remove duplicates
     const lines = prompts.split('\n')
@@ -362,8 +416,12 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
       varCounts,
       stepCount,
       nIter,
+      samplingMethod,
+      samplingSchedule,
       setStepCount,
       setNIter,
+      setSamplingMethod,
+      setSamplingSchedule,
       promptPrefix: PROMPT_PREFIX,
       activeIndex,
       templateId,

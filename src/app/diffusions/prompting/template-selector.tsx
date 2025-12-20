@@ -48,11 +48,11 @@ export const TemplateSelector = (): JSX.Element => {
 
   return (<div className="w-100 d-flex flex-wrap flex-row">
     <div className="w-100 d-flex flex-row justify-content-center align-items-center mt-2">
-      <Button onClick={callDelete} className="w-10" color="danger">
+      <Button onClick={callDelete} className="w-20 mr-5" color="danger">
         <IconTrash className="bg-transparent" size={16} />
       </Button>
       <CreatableSelect
-        className="w-40 ml-5"
+        className="w-75 ml-5"
         options={templateIds.map((x) => ({ label: x, value: x }))}
         onChange={(e) => {
           if (e) {
@@ -63,7 +63,7 @@ export const TemplateSelector = (): JSX.Element => {
         isSearchable
         placeholder="Select or create a template"
       />
-      <Button onClick={save} color="success" className="w-40 ml-5">Save</Button>
+      {/* <Button onClick={save} color="success" className="w-40 ml-5">Save</Button> */}
     </div>
   </div>);
 }

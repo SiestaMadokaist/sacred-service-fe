@@ -46,6 +46,7 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
   const [openAIKey] = useLocalStorage("openai_api", "");
   const [selectedModel] = useLocalStorage("openai_model", "gpt-4o-mini");
   const [systemPrompt] = useLocalStorage("openai_system_prompt", "");
+  const [customParamsText] = useLocalStorage("openai_custom_params", "{}");
 
   useEffect(() => {
     setOrientation(props.template.orientation ?? 'portrait');
@@ -206,7 +207,7 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
             content: builtPrompt
           }
         ],
-        temperature: 0.7,
+        ...JSON.parse(customParamsText || "{}")
       });
 
       const response = completion.choices[0]?.message?.content || "";
