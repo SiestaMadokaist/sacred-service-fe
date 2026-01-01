@@ -232,6 +232,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
       height: 1200,
       steps: stepCount,
       subseed: undefined,
+      subseed_strength: 0.2,
       sampler_name: samplerName,
       seed: seed ?? Math.floor(Math.random() * 10_000_000),
     };
