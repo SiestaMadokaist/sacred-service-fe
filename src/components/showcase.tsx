@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { Button, Card, CardHeader } from "reactstrap";
 import { SYSTEM_ENV } from "../helper/env";
 import { AxiosInstance } from "axios";
-import { IconCheck, IconCircle, IconCircle0Filled, IconCircleFilled, IconLock, IconX } from "@tabler/icons-react";
+import { IconCheck, IconCircle, IconCircle0Filled, IconCircleFilled, IconLock, IconStarFilled, IconStarOff, IconX } from "@tabler/icons-react";
 import { getAuth, setAuth } from "../api/api";
 import { useRefState } from "../hooks/useRefState";
+import { Set as ImmutableSet } from "immutable";
 
 export interface IReport {
   createdAt: number;
@@ -126,21 +127,40 @@ export const Showcase = (props: IShowcase): JSX.Element => {
     }
   }
 
-  const elem = connected ? (
+  const wsConnection = connected ? (
     <IconCircleFilled onClick={resetWS} style={{ color: 'green', height: '2.5em', width: '2.5em' }} />
   ) : (
     <IconCircle onClick={resetWS} style={{ color: 'red', height: '2.5em', width: '2.5em', cursor: 'pointer' }} />
   );
 
+  const [favorites, setFavorites] = useState<ImmutableSet<string>>(ImmutableSet())
+  const starred = favorites.has(report?.url ?? '')
+
+  const toggleStar = () => {
+    const url = report?.url ?? '';
+    if (!url) return;
+
+    if (favorites.has(url)) {
+      setFavorites(favorites.delete(url));
+    } else {
+      setFavorites(favorites.add(url));
+    }
+  }
+  const star = starred ? (
+    <IconStarFilled onClick={toggleStar} style={{ color: 'yellow', height: '2.5em', width: '2.5em', stroke: 'orange', strokeWidth: 1 }}></IconStarFilled>
+  ) : (
+    <IconStarOff onClick={toggleStar} style={{ color: 'gray', height: '2.5em', width: '2.5em' }}></IconStarOff>
+  )
 
   return (
     <Card className="bg-white text-black w-100 h-100" style={{ overflow: 'hidden' }}>
-      <CardHeader className="w-100 d-flex flex-wrap justify-content-center align-items center">
-        {elem}
-        <Button style={{ fontSize: '0.875em' }} color="primary" className="w-22 ml-1" onClick={prev}>&lt;</Button>
-        <div style={{ display: reports.length > 0 ? 'block' : 'none' }} className="ml-2 w-20 justify-content-center align-items-center d-flex flex-wrap">{index + 1}/{reports.length}</div>
-        <Button style={{ fontSize: '0.875em' }} color="primary" className="w-22 ml-2" onClick={next}>&gt;</Button>
-        <IconLock onClick={toggleLock} style={{ backgroundColor: locked ? "#0a58ca" : 'white', color: locked ? 'white' : '#0a58ca', cursor: 'pointer', height: '2.5em', width: '2.5em' }} className="ml-2" />
+      <CardHeader className="w-100 d-flex flex-nowrap justify-content-center align-items-center" style={{ minHeight: '3.5em', gap: '0.5rem' }}>
+        {wsConnection}
+        {star}
+        <Button style={{ fontSize: '0.875em', height: '2.5em' }} color="primary" className="px-3" onClick={prev}>&lt;</Button>
+        <div style={{ display: reports.length > 0 ? 'block' : 'none', minWidth: '4rem', textAlign: 'center' }}>{index + 1}/{reports.length}</div>
+        <Button style={{ fontSize: '0.875em', height: '2.5em' }} color="primary" className="px-3" onClick={next}>&gt;</Button>
+        <IconLock onClick={toggleLock} style={{ backgroundColor: locked ? "#0a58ca" : 'white', color: locked ? 'white' : '#0a58ca', cursor: 'pointer', height: '2.5em', width: '2.5em' }} />
       </CardHeader>
       <div className="w-100 mt-2 d-flex flex-wrap justify-content-center align-items-center" onClick={copy} style={{ cursor: 'pointer', overflow: 'hidden' }}>
         <img src={report?.url} alt="Latest Showcase" style={{ display: report?.url ? '' : 'none', maxWidth: '95%', maxHeight: '95%' }} />
