@@ -19,7 +19,7 @@ const VariableEditor = (props: IVariableEditor): JSX.Element => {
 
   useEffect(() => {
     // const endWithComma = value.endsWith(',');
-    const newValue = value.replace(/\,$/, "");
+    const newValue = value.trim().replace(/\,$/, "");
     const newVars = { ...ctx.variables, [props.k]: newValue };
     ctx.setVariables(newVars);
   }, [debouncedValue]);
