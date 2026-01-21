@@ -149,6 +149,7 @@ interface IPromptingContext {
   buildPrompt: (template: string) => string;
   setTemplate: (index: number, template: ITemplate) => void;
   addTemplate: (after: number, template: ITemplate) => void;
+  reorderTemplates: (oldIndex: number, newIndex: number) => void;
   templates: ITemplate[];
   pushQueue: (ts: ITemplate[]) => Promise<void>;
   varCounts: Record<string, number>;
@@ -304,6 +305,13 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
     setTemplates(newTemplates);
   }
 
+  const reorderTemplates = (oldIndex: number, newIndex: number) => {
+    const newTemplates = [...templates];
+    const [removed] = newTemplates.splice(oldIndex, 1);
+    newTemplates.splice(newIndex, 0, removed);
+    setTemplates(newTemplates);
+  }
+
   useEffect(() => {
     hub.on('api-error', (err) => {
       showToast({ level: 'danger', show: true, title: `Error Code: ${err.statusCode}`, message: JSON.stringify(err.data) });
@@ -427,6 +435,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
       templateId,
       setTemplate,
       addTemplate,
+      reorderTemplates,
       templates,
       setTemplateId,
       setVariables,
