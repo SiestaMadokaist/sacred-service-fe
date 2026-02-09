@@ -1,16 +1,16 @@
 import { Item } from "./constants"
-import { setup } from "./setup";
+import { setup, YieldLimit } from "./setup";
 
-// const YieldLimit = {
-//     Originium: 520,
-//     Amethyst: 240,
-//     Ferium: 470,
-// }
+const yieldLimit: YieldLimit = {
+    [Item.OriginiumOre]: 520,
+    [Item.AmethystOre]: 240,
+    [Item.FeriumOre]: 470,
+}
 
 function main(): void {
     const inputNeeded = 1;
     setup.printTotalCost([
-        { item: Item.HCValleyBattery, amount: 1, inputNeeded },
+        { item: Item.HCValleyBattery, amount: 2, inputNeeded },
         { item: Item.BuckCapsuleA, amount: 1, inputNeeded },
         // { item: Item.SteelBottle, amount: 1, inputNeeded },
         // // { item: Item.BuckCapsuleB, amount: 2, inputNeeded, },
@@ -26,7 +26,7 @@ function main(): void {
         { item: Item.FeriumPart, amount: 1, inputNeeded },
         { item: Item.Carbon, amount: 1, inputNeeded },
         // { item: Item.DenseOrigocrustPowder, amount: 1, inputNeeded },
-    ])
+    ], yieldLimit)
 }
 
 if (require.main === module) {
