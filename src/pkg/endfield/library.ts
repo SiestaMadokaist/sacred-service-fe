@@ -24,6 +24,10 @@ export const $setup = {
         [[Item.OriginiumPowder, 2, 2],
         [Item.SandleafPowder, 1, 1]]
     ),
+    [Item.FeriumComponent]: new Formula(Item.FeriumComponent, 10, [
+        [Item.Origocrust, 10, 2],
+        [Item.Ferium, 10, 2],
+    ]), 
     [Item.OriginiumPowder]: new Formula(Item.OriginiumPowder, 2, [[Item.OriginiumOre, 1, 1]]),
     [Item.Steel]: new Formula(Item.Steel, 2, [[Item.DenseFeriumPowder, 1, 1]]),
     [Item.DenseFeriumPowder]: new Formula(
@@ -70,7 +74,7 @@ export const $setup = {
         [Item.BuckflowerPowder, 5, 1],
     ], 10),
 
-    [Item.CannedCitromeC]: new Formula(Item.CannedCitromeC, 2, [
+    [Item.CannedCitromeC]: new Formula(Item.CannedCitromeC, 10, [
         [Item.AmethystBottle, 5, 1],
         [Item.CitromePowder, 5, 1],
     ], 10),

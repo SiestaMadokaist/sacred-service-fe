@@ -18,6 +18,7 @@ export interface IReport {
 }
 
 interface IShowcase {
+  thumbnail?: boolean;
   collectionAPI: AxiosInstance;
   onReport(report: IReport): void;
   onViewChanged(report: IReport): void

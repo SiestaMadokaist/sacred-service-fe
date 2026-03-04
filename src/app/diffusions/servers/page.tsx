@@ -36,12 +36,26 @@ interface IBill {
   }
 }
 
+interface INamedRegion {
+  name: string;
+  id: string;
+}
+
+const regions: INamedRegion[] = [{
+  name: 'sydney',
+  id: 'ap-southeast-2',
+}, {
+  name: 'virginia',
+  id: 'us-east-1',
+}]
+
 const ComputeManager: React.FC = () => {
   const [instances, setInstances] = useState<EC2Instance[]>([]);
   const [checkpoints, setCheckpoints] = useState<ICheckpoint[]>([]);
   const [checkpoint, setCheckpoint] = useState<ICheckpoint | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [region, setRegion] = useState<INamedRegion>(regions[0]);
 
   const { toastElement, showToast } = useToast({ duration: 3000 });
   const hub = apiHub();
@@ -54,7 +68,7 @@ const ComputeManager: React.FC = () => {
     })
   })
 
-  const computeAPI = useApi(hub, "/computes");
+  const computeAPI = useApi(hub, `/computes/${region.id}`);
 
   const fetchInstances = async () => {
     setLoading(true);
@@ -111,7 +125,7 @@ const ComputeManager: React.FC = () => {
   useEffect(() => {
     fetchInstances();
     fetchBill();
-  }, []);
+  }, [region]);
 
   useTitle("🖥️ Server Manager");
   const date = new Date();
@@ -135,7 +149,18 @@ const ComputeManager: React.FC = () => {
             {billMTD.toFixed(3)} USD / {monthlyEstimate.toFixed(3)} USD
           </h2>
         </Col>
-        <Col></Col>
+        <Col className="d-flex gap-2">
+          {regions.map((r) => (
+            <Button
+              key={r.id}
+              size="sm"
+              color={region.id === r.id ? "primary" : "secondary"}
+              onClick={() => setRegion(r)}
+            >
+              {r.name} ({r.id})
+            </Button>
+          ))}
+        </Col>
       </Row>
       <div style={{ borderBottom: '1px #146c43 dotted' }} className="d-flex mb-2">
         {dailyBills.map((x) => (<Col key={x.TimePeriod.Start}>

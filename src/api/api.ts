@@ -6,7 +6,7 @@ const AUTH_TOKEN = 'AUTH_TOKEN';
 export type Resource = '/collections'
   | '/users'
   | '/investments'
-  | '/computes'
+  | `/computes/${string}`
   | '/trades'
   | '/prompts';
 export type JWT = never;

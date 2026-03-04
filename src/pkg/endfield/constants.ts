@@ -5,6 +5,7 @@ export enum Item {
     BuckCapsuleA,
     BuckCapsuleB, // 27
     SCValleyBattery, // 30
+    FeriumComponent,
 
     LCValleyBattery, // 16
     BuckCapsuleC, // 10

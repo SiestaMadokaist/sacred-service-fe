@@ -26,7 +26,6 @@ export class Formula<Key extends Item> {
     private memo = new Memoizer<{ 
         normalizedCost: ICost[];
         originCost: ICost[];
-        treeCost: ICost[];
     }>()
     private props: IFormula<Key>;
     constructor(name: Key, productionTime: Second, cost: [Item, Amount, InputNeeded][], price: Price = 0) {
