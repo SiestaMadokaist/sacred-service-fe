@@ -1,14 +1,17 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Button } from "reactstrap";
 import { Showcase } from "../../../components/showcase";
 import { useTitle } from "../../../hooks/useTitle";
 import { PromptProvider, usePromptContext } from "./context";
+import { PresetManagerModal } from "./preset-manager";
 import { TemplateEditors } from "./template-editors";
 import { TemplateSelector } from "./template-selector";
 import { VariableEditors } from "./variable-editor";
 
 function InnerPage(): JSX.Element {
   const ctx = usePromptContext();
+  const [presetOpen, setPresetOpen] = useState(false);
   useEffect(() => {
     const handleBeforeUnload = async (event: BeforeUnloadEvent) => {
       await ctx.promptAPI.post(`/`, {
@@ -25,7 +28,15 @@ function InnerPage(): JSX.Element {
   }, [])
   return (<div className="d-flex flex-wrap w-100 mt-2 justify-content-center">
     <div className="w-70">
-      <TemplateSelector />
+      <div className="d-flex">
+        <div style={{ width: '90%' }}>
+          <TemplateSelector />
+        </div>
+        <div style={{ width: '10%' }} className="d-flex align-items-center justify-content-end mt-2">
+          <Button color="primary" onClick={() => setPresetOpen(true)}>Presets</Button>
+        </div>
+      </div>
+      <PresetManagerModal isOpen={presetOpen} toggle={() => setPresetOpen(false)} />
       <div className="mt-2 h-90vh">
         <TemplateEditors />
       </div>

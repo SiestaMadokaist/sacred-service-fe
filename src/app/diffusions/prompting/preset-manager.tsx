@@ -1,99 +1,146 @@
 import { IPreset } from "@/api/dto/presets";
 import { ID } from "@/pkg/typing/id";
-import { useState } from "react";
-import { Button, Input, InputGroup } from "reactstrap";
+import { useEffect, useState } from "react";
+import { Button, Input, InputGroup, Modal, ModalBody, ModalHeader } from "reactstrap";
 import { usePromptContext } from "./context";
 
-export function PresetManager(): JSX.Element {
+export function PresetManagerModal({ isOpen, toggle }: { isOpen: boolean; toggle: () => void }): JSX.Element {
   const { promptAPI, variables, setVariables, templateId } = usePromptContext();
 
   const [presetNames, setPresetNames] = useState<ID.PresetName[]>([]);
   const [selectedName, setSelectedName] = useState<ID.PresetName>('' as ID.PresetName);
   const [saveName, setSaveName] = useState<string>('');
+  const [saveAsMode, setSaveAsMode] = useState(false);
   const [presetVars, setPresetVars] = useState<IPreset['variables']>({});
+  const [rejected, setRejected] = useState<Set<string>>(new Set());
+
+  const toggleReject = (key: string) => {
+    setRejected((prev) => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  };
+
+  const activeVars = () => Object.fromEntries(
+    Object.entries(presetVars).filter(([k]) => !rejected.has(k))
+  ) as IPreset['variables'];
 
   const fetchPresets = async () => {
-    const { data } = await promptAPI.get<ID.PresetName[]>('/presets');
-    setPresetNames(data);
+    const { data } = await promptAPI.get<IPreset[]>('/presets/');
+    setPresetNames(data.map((p) => p.name));
   };
+
+  useEffect(() => { fetchPresets(); }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      setPresetVars({ ...variables });
+      setRejected(new Set(Object.keys(variables)));
+    }
+  }, [isOpen]);
 
   const selectPreset = async (name: ID.PresetName) => {
     setSelectedName(name);
+    setSaveName(name);
     if (!name) return;
     const { data } = await promptAPI.get<IPreset>(`/presets/${name}`);
     setPresetVars(data.variables);
-  };
-
-  const removeVar = (key: string) => {
-    const next = { ...presetVars };
-    delete next[key as ID.VariableID];
-    setPresetVars(next);
+    setRejected(new Set());
   };
 
   const applyPreset = () => {
-    setVariables({ ...variables, ...presetVars });
+    setVariables({ ...variables, ...activeVars() });
   };
 
   const savePreset = async () => {
-    const name = (saveName || templateId || selectedName) as ID.PresetName;
-    if (!name) return;
-    await promptAPI.post('/presets', { name, variables: presetVars });
+    if (!selectedName) return;
+    await promptAPI.post('/presets/', { name: selectedName, variables: activeVars() });
   };
 
-  const presetVarEntries = Object.entries(presetVars);
+  const deletePreset = async () => {
+    if (!selectedName) return;
+    const ok = confirm(`You're about to delete "${selectedName}". Press OK to continue.`);
+    if (!ok) return;
+    await promptAPI.delete(`/presets/${selectedName}`);
+    setSelectedName('' as ID.PresetName);
+    setSaveName('');
+    setPresetVars({});
+    await fetchPresets();
+  };
+
+  const saveAsPreset = async () => {
+    if (!saveAsMode) { setSaveAsMode(true); return; }
+    const name = (saveName || templateId) as ID.PresetName;
+    if (!name) return;
+    await promptAPI.post('/presets/', { name, variables: activeVars() });
+    setSaveAsMode(false);
+  };
+
+  const presetVarEntries = Object.entries(presetVars).sort(([a], [b]) => {
+    return (rejected.has(a) ? 1 : 0) - (rejected.has(b) ? 1 : 0);
+  });
 
   return (
-    <div className="d-flex flex-column gap-2 p-2" style={{ border: '1px solid #444', borderRadius: 6 }}>
-      <div className="d-flex gap-2 align-items-center">
-        <Input
-          type="select"
-          bsSize="sm"
-          value={selectedName}
-          onChange={(e) => selectPreset(e.target.value as ID.PresetName)}
-          style={{ maxWidth: 180 }}
-        >
-          <option value="">-- select preset --</option>
-          {presetNames.map((n) => (
-            <option key={n} value={n}>{n}</option>
-          ))}
-        </Input>
-        <Button size="sm" color="secondary" onClick={fetchPresets} title="Refresh presets">
-          ↺
-        </Button>
-        <Button size="sm" color="success" onClick={applyPreset} disabled={presetVarEntries.length === 0}>
-          Apply
-        </Button>
-      </div>
-
-      {presetVarEntries.length > 0 && (
-        <div className="d-flex flex-column gap-1" style={{ maxHeight: 200, overflowY: 'auto' }}>
-          {presetVarEntries.map(([key, val]) => (
-            <div key={key} className="d-flex gap-1 align-items-center">
-              <Button
-                size="sm"
-                color="danger"
-                onClick={() => removeVar(key)}
-                style={{ padding: '0 6px', lineHeight: '1.2' }}
-              >
-                ✕
-              </Button>
-              <span style={{ minWidth: 100, color: '#aaa', fontSize: 12 }}>{key}</span>
-              <span style={{ fontSize: 12 }}>{val}</span>
-            </div>
-          ))}
+    <Modal isOpen={isOpen} toggle={toggle} size="lg">
+      <ModalHeader toggle={toggle}>
+        <div className="d-flex gap-2 align-items-center">
+          <span>Preset Manager</span>
+          <Button size="sm" color="secondary" onClick={fetchPresets} title="Refresh">↺</Button>
         </div>
-      )}
+      </ModalHeader>
+      <ModalBody>
+        <div className="d-flex flex-column gap-2">
+          <div className="d-flex gap-2 align-items-center">
+            <Input
+              type="select"
+              value={selectedName}
+              onChange={(e) => selectPreset(e.target.value as ID.PresetName)}
+              style={{ maxWidth: 220 }}
+            >
+              <option value="">-- select preset --</option>
+              {presetNames.map((n) => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </Input>
+            <Button color="success" onClick={applyPreset} disabled={presetVarEntries.length === 0}>Apply</Button>
+            <Button color="danger" onClick={deletePreset} disabled={!selectedName}>Delete</Button>
+            <Button color="primary" onClick={savePreset} disabled={!selectedName}>Save</Button>
+            <InputGroup>
+              <Button color="warning" onClick={saveAsPreset}>{saveAsMode ? 'Confirm' : 'Save As'}</Button>
+              <Input
+                placeholder={templateId || 'new preset name'}
+                value={saveName}
+                disabled={!saveAsMode}
+                onChange={(e) => setSaveName(e.target.value)}
+              />
+            </InputGroup>
+          </div>
 
-      <InputGroup size="sm">
-        <Input
-          placeholder={templateId || selectedName || 'preset name'}
-          value={saveName}
-          onChange={(e) => setSaveName(e.target.value)}
-        />
-        <Button color="primary" onClick={savePreset}>
-          Save
-        </Button>
-      </InputGroup>
-    </div>
+          {presetVarEntries.length > 0 && (
+            <div className="d-flex flex-column gap-1" style={{ maxHeight: 300, overflowY: 'auto' }}>
+              {presetVarEntries.map(([key, val]) => (
+                <div key={key} className="d-flex gap-1 align-items-center" style={{ opacity: rejected.has(key) ? 0.4 : 1 }}>
+                  <Button
+                    color={rejected.has(key) ? 'secondary' : 'danger'}
+                    onClick={() => toggleReject(key)}
+                    style={{ padding: '0 8px', lineHeight: '1.2' }}
+                  >
+                    ✕
+                  </Button>
+                  <span style={{ minWidth: 120, color: '#aaa', fontSize: 14, textDecoration: rejected.has(key) ? 'line-through' : 'none' }}>{key}</span>
+                  <span
+                    contentEditable
+                    suppressContentEditableWarning
+                    onBlur={(e) => setPresetVars({ ...presetVars, [key as ID.VariableID]: e.currentTarget.textContent as ID.VariableValue })}
+                    style={{ fontSize: 14, minWidth: 80, outline: 'none', borderBottom: '1px solid #555', cursor: 'text' }}
+                  >{val}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </ModalBody>
+    </Modal>
   );
 }
