@@ -5,6 +5,7 @@ import { apiHub, initShowHub, ShowHub } from "../../../api/hub";
 import { useApi } from "../../../hooks/useApi";
 import { SYSTEM_ENV } from "../../../helper/env";
 import useLocalStorage from "use-local-storage";
+import { IVariables } from "@/api/dto/variables";
 
 export type SamplingMethod =
   | 'Euler'
@@ -130,7 +131,7 @@ export interface ITemplate {
 }
 
 interface IPromptingContext {
-  variables: Record<string, string>;
+  variables: IVariables;
   promptPrefix: string;
   activeIndex: number;
   nIter: number;
@@ -175,7 +176,7 @@ watermark, text, extra digits, extra finger, blood`;
 export function PromptProvider(props: IPromptProvider): JSX.Element {
   const [hub] = useState(apiHub());
   const promptAPI = useApi(hub, '/prompts');
-  const computeAPI = useApi(hub, '/computes');
+  const computeAPI = useApi(hub, '/computes/ap-southeast-2');
   const collectionAPI = useApi(hub, '/collections');
   const { toastElement, showToast } = useToast({ duration: 3000 });
   const [subseed] = useState<number>(-1);
