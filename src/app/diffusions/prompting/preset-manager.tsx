@@ -4,10 +4,37 @@ import { useEffect, useState } from "react";
 import { Button, Input, InputGroup, Modal, ModalBody, ModalHeader } from "reactstrap";
 import { usePromptContext } from "./context";
 
-export function PresetManagerModal({ isOpen, toggle }: { isOpen: boolean; toggle: () => void }): JSX.Element {
+export function PresetApplier({ presetNames, onEdit }: { presetNames: string[]; onEdit: () => void }): JSX.Element {
+  const { promptAPI, variables, setVariables } = usePromptContext();
+  const [selectedName, setSelectedName] = useState<ID.PresetName>('' as ID.PresetName);
+  const [presetVars, setPresetVars] = useState<IPreset['variables']>({});
+
+  const selectPreset = async (name: ID.PresetName) => {
+    setSelectedName(name);
+    if (!name) { setPresetVars({}); return; }
+    const { data } = await promptAPI.get<IPreset>(`/presets/${name}`);
+    setPresetVars(data.variables);
+  };
+
+  return (
+    <div className="d-flex gap-2 align-items-center">
+      <Button color="primary" onClick={onEdit}>Edit</Button>
+      <Input
+        type="select"
+        value={selectedName}
+        onChange={(e) => selectPreset(e.target.value as ID.PresetName)}
+      >
+        <option value="">-- preset --</option>
+        {presetNames.map((n) => <option key={n} value={n}>{n}</option>)}
+      </Input>
+      <Button color="success" disabled={!selectedName} onClick={() => setVariables({ ...variables, ...presetVars })}>Apply</Button>
+    </div>
+  );
+}
+
+export function PresetManagerModal({ isOpen, toggle, presetNames, onFetch }: { isOpen: boolean; toggle: () => void; presetNames: string[]; onFetch: () => Promise<void> }): JSX.Element {
   const { promptAPI, variables, setVariables, templateId } = usePromptContext();
 
-  const [presetNames, setPresetNames] = useState<ID.PresetName[]>([]);
   const [selectedName, setSelectedName] = useState<ID.PresetName>('' as ID.PresetName);
   const [saveName, setSaveName] = useState<string>('');
   const [saveAsMode, setSaveAsMode] = useState(false);
@@ -26,12 +53,6 @@ export function PresetManagerModal({ isOpen, toggle }: { isOpen: boolean; toggle
     Object.entries(presetVars).filter(([k]) => !rejected.has(k))
   ) as IPreset['variables'];
 
-  const fetchPresets = async () => {
-    const { data } = await promptAPI.get<IPreset[]>('/presets/');
-    setPresetNames(data.map((p) => p.name));
-  };
-
-  useEffect(() => { fetchPresets(); }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -66,7 +87,7 @@ export function PresetManagerModal({ isOpen, toggle }: { isOpen: boolean; toggle
     setSelectedName('' as ID.PresetName);
     setSaveName('');
     setPresetVars({});
-    await fetchPresets();
+    await onFetch();
   };
 
   const saveAsPreset = async () => {
@@ -75,6 +96,7 @@ export function PresetManagerModal({ isOpen, toggle }: { isOpen: boolean; toggle
     if (!name) return;
     await promptAPI.post('/presets/', { name, variables: activeVars() });
     setSaveAsMode(false);
+    await onFetch();
   };
 
   const presetVarEntries = Object.entries(presetVars).sort(([a], [b]) => {
@@ -86,7 +108,7 @@ export function PresetManagerModal({ isOpen, toggle }: { isOpen: boolean; toggle
       <ModalHeader toggle={toggle}>
         <div className="d-flex gap-2 align-items-center">
           <span>Preset Manager</span>
-          <Button size="sm" color="secondary" onClick={fetchPresets} title="Refresh">↺</Button>
+          <Button size="sm" color="secondary" onClick={onFetch} title="Refresh">↺</Button>
         </div>
       </ModalHeader>
       <ModalBody>
