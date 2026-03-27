@@ -44,7 +44,7 @@ export const FromS3 = (props: IFromS3): JSX.Element => {
       ]);
     }
     action();
-  }, []);
+  }, [computeAPI]);
   return (<div className="w-100 h-100 overflow-auto mt-2">
     <div className="d-flex flex-wrap w-100">
       {s3Loras.map((x) => <DownloadS3 computeAPI={computeAPI} lora={x} key={x.key} />)}

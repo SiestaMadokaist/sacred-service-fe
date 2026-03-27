@@ -56,7 +56,7 @@ interface IRegionalPrompterArgs {
       false, // debug
       "Matrix" | "Mask" | "Prompt",
       "Horizontal" | "Vertical" | "Columns" | "Rows",
-      "Mask",
+      "Mask" | null,
       "Prompt" | "Prompt-Ex",
       RATIO,
       "", // base ratio,
@@ -388,7 +388,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
       false, // debug
       "Matrix",
       selectedOrientation,
-      "Mask", // mask
+      null, // mask
       "Prompt", // prompt
       ratio as "1,1", // ratio
       "", // base ratio
@@ -400,7 +400,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
       "0", // lora text encoder (?)
       "0", // lora u-net
       "0",  // threshold
-      "", // mask ?
+      "0" as '', // mask ?
       // "0", // lora stop step
       // "0", // lora hires stop step
       // false // flip

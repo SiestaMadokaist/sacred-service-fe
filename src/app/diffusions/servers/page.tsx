@@ -58,14 +58,14 @@ const ComputeManager: React.FC = () => {
   const [region, setRegion] = useState<INamedRegion>(regions[0]);
 
   const { toastElement, showToast } = useToast({ duration: 3000 });
-  const hub = apiHub();
+  const [hub] = useState(apiHub);
   useEffect(() => {
     hub.on('api-error', (err) => {
       showToast({ level: 'danger', show: true, title: `Error Code: ${err.statusCode}`, message: JSON.stringify(err.data) });
     })
-    hub.on('api-success', (msg) => {
-      showToast({ level: 'success', show: true, title: `Success`, message: msg.message });
-    })
+    // hub.on('api-success', (msg) => {
+    //   showToast({ level: 'success', show: true, title: `Success`, message: msg.message });
+    // })
   })
 
   const computeAPI = useApi(hub, `/computes/${region.id}`);

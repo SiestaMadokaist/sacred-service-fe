@@ -193,8 +193,8 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
         dangerouslyAllowBrowser: true
       });
 
-      const builtPrompt = ctx.buildPrompt(localTemplate);
-      const tags: Set<string> = new Set(builtPrompt.split(/[,\n]/).map(t => t.trim()).filter(t => t.length > 0));
+      // const builtPrompt = ctx.buildPrompt(localTemplate);
+      const tags: Set<string> = new Set(localTemplate.split(/[,\n]/).map(t => t.trim()).filter(t => t.length > 0));
       const completion = await client.chat.completions.create({
         model: selectedModel,
         messages: [
@@ -204,7 +204,7 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
           },
           {
             role: "user",
-            content: builtPrompt
+            content: localTemplate,
           }
         ],
         ...JSON.parse(customParamsText || "{}")

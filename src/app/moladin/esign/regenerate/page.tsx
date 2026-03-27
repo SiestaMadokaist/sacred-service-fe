@@ -30,6 +30,9 @@ interface IDocument {
   id: string;
   error?: object;
   name: string;
+  links: {
+    latest?: string;
+  };
   status: string;
   signers: ISigner[];
   variables: IVariable[];
@@ -209,7 +212,11 @@ export default function RegeneratePage(): JSX.Element {
       <div style={{ margin: '1%', width: '48%' }} className="d-flex">
         <Card style={{ height: '83vh', overflow: 'hidden' }}>
           <CardHeader>
-            <div style={{ textAlign: 'center', width: '100%' }}>{docResponse?.status}</div>
+            <div style={{ textAlign: 'center', width: '100%' }}>
+              {docResponse?.links?.latest
+                ? <a href={docResponse.links.latest} target="_blank" rel="noreferrer">{docResponse.status}</a>
+                : docResponse?.status}
+            </div>
           </CardHeader>
           <CardBody style={{ height: '100%', overflowY: 'scroll' }}>
             <InputGroup style={{ width: '100%' }}>
