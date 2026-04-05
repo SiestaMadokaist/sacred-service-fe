@@ -3,18 +3,32 @@
 import { useEffect, useState } from "react";
 import { ICanvas, ICoordinate, IStamp, PDFPage } from "./pdf-page";
 import useLocalStorage from "use-local-storage";
-import axios, { AxiosError } from "axios";
+import axios, { AxiosError, AxiosResponse } from "axios";
 import { Button, Card, CardBody, Input, InputGroup, InputGroupText, Toast } from "reactstrap";
 import { SYSTEM_ENV } from "../../../../helper/env";
 import { StampJsonEditor } from "./stamp-json-editor";
 
 const defaultImages: string[] = [];
 
-type STAMP_TYPE = 'VIDA' | 'IMAGE' | 'TEXT';
+type STAMP_TYPE = 'VIDA' | 'IMAGE' | 'TEXT' | 'DISABLE';
+
+interface AxiosData<T> extends AxiosResponse {
+  data: {
+    data: T;
+  }
+}
+
+export interface IExtractResponse<Input extends Buffer | string> {
+  key: string;
+  images: string[];
+  totalPages: number;
+  stamps: Input extends string ? IStamp[] : undefined;
+}
 
 export default function StampingPage(): JSX.Element {
   const [fileBase64, setFileBase64] = useState<string>('')
   const [fileName, setFileName] = useState<string>('')
+  const [documentId, setDocumentId] = useState<string>('')
   const [signSrc, setSignSrc] = useLocalStorage<string>('signSrc', 'https://example.com/signature.png');
   const [images, setImages] = useState<string[]>(defaultImages);
   const [stamps, setStamps] = useState<IStamp[]>([]);
@@ -23,6 +37,7 @@ export default function StampingPage(): JSX.Element {
   const [toastMessage, setToastMessage] = useState<string>('');
   const [stampType, setStampType] = useState<STAMP_TYPE>('VIDA');
   const [imagePrefix, setImagePrefix] = useState<string>('imagestamp');
+  const [inputMode, setInputMode] = useLocalStorage<'file' | 'docId'>('stampInputMode', 'file');
 
   const showToast = (message: string, duration: number = 3_000) => {
     setToastMessage(message);
@@ -46,7 +61,8 @@ export default function StampingPage(): JSX.Element {
       showToast("Extract Failed")
     } else {
       showToast("Extract Success")
-      setImages(response.data.data.images);
+      const resp = response as AxiosData<IExtractResponse<Buffer>>
+      setImages(resp.data.data.images);
     }
   }
   const prev = () => {
@@ -63,6 +79,7 @@ export default function StampingPage(): JSX.Element {
   }
   const image = images[page];
   const addStamp = (coordinate: ICoordinate, canvas: ICanvas) => {
+    if (stampType === 'DISABLE') return;
     if (stampType === 'VIDA') {
       const stamp: IStamp = {
         stampType,
@@ -73,7 +90,8 @@ export default function StampingPage(): JSX.Element {
         codeDocument: 'VD001',
         style: {
           size: 10,
-        }
+        },
+        isDisabled: false,
       }
       setStamps([...stamps, stamp]);
     } else if (stampType === 'IMAGE') {
@@ -86,7 +104,8 @@ export default function StampingPage(): JSX.Element {
         source: signSrc,
         style: {
           size: 10,
-        }
+        },
+        isDisabled: false,
       }
       setStamps([...stamps, stamp]);
     } else if (stampType === 'TEXT') {
@@ -100,13 +119,18 @@ export default function StampingPage(): JSX.Element {
         source: "",
         style: {
           size: 10,
-        }
+        },
+        isDisabled: false,
       }
       setStamps([...stamps, stamp]);
     }
   }
   const removeStamp = (name: string) => {
-    setStamps(stamps.filter(stamp => stamp.name !== name));
+    if (stampType === 'DISABLE') {
+      setStamps(stamps.map(stamp => stamp.name === name ? { ...stamp, isDisabled: !stamp.isDisabled } : stamp));
+    } else {
+      setStamps(stamps.filter(stamp => stamp.name !== name));
+    }
   }
 
   const duplicateStamp = (stamp: IStamp) => {
@@ -152,6 +176,50 @@ export default function StampingPage(): JSX.Element {
     }
   }
 
+  const loadDocument = async () => {
+    if (!documentId) {
+      showToast('Enter a document ID');
+      return;
+    }
+    showToast('Loading document...', 60_000);
+    const extractResponse = await devRequest.post<AxiosResponse<IExtractResponse<string>>>('/v1/debug/extract-doc', { id: documentId.trim() }).catch((e: AxiosError) => e);
+    if (extractResponse instanceof Error) {
+      showToast('Failed to extract document');
+      return;
+    }
+    const data = extractResponse.data.data;
+    const docStamps: IStamp[] = (data.stamps ?? []).map((s): IStamp => ({
+      coordinate: s.coordinate,
+      canvas: s.canvas,
+      stampType: s.stampType,
+      name: s.name,
+      trigger: s.trigger ?? 'AUTO',
+      ...(s.codeDocument != null && { codeDocument: s.codeDocument }),
+      // ...(s.source != null && { source: s.source }),
+      source: s.stampType === 'IMAGE' ? s.source ?? signSrc : undefined,
+      style: {
+        size: s.style?.size,
+        width: s.style?.width ?? undefined,
+        height: s.style?.height ?? undefined,
+      },
+      isDisabled: s.isDisabled,
+    }));
+    const [imageStamp] = data.stamps.filter((x) => x.stampType  === 'IMAGE');
+    if (imageStamp !== undefined) {
+      const match = imageStamp.name.match(/^(.*?)(\d+)$/);
+      if (match) {
+        const extractedPrefix = match[1];
+        if (extractedPrefix.startsWith('ttd-')) {
+          setImagePrefix(extractedPrefix);
+        }
+      }
+    }
+    setStamps(docStamps);
+    setPage(0);
+    setImages(data.images);
+    showToast('Document loaded');
+  }
+
   useEffect(() => {
     if (fileBase64.length > 0) {
       extract();
@@ -167,17 +235,20 @@ export default function StampingPage(): JSX.Element {
       next();
     }
   }
-  const primaryIf = (type: STAMP_TYPE) => {
+  const primaryIf = (type: Exclude<STAMP_TYPE, 'DISABLE'>) => {
     return stampType === type ? 'primary' : 'secondary';
   }
 
   const getStampedPages = () => {
-    const pages = new Set<number>();
-    stamps.forEach(stamp => {
-      pages.add(stamp.coordinate.page);
-    });
-    return Array.from(pages).sort((a, b) => a - b);
+    return [...stamps].sort((a, b) => a.coordinate.page - b.coordinate.page);
   }
+
+  const stampTypeStyle: Record<STAMP_TYPE, { backgroundColor: string; borderColor: string; color: string }> = {
+    VIDA: { backgroundColor: '#471a1a', borderColor: '#FF5252', color: '#FF6B6B' },
+    IMAGE: { backgroundColor: '#1a2a47', borderColor: '#2196F3', color: '#64B5F6' },
+    TEXT: { backgroundColor: '#1a472a', borderColor: '#4CAF50', color: '#76ff03' },
+    DISABLE: { backgroundColor: '#2a1a47', borderColor: '#9C27B0', color: '#CE93D8' },
+  };
 
   const getStampCounts = () => {
     const counts = { VIDA: 0, IMAGE: 0, TEXT: 0 };
@@ -197,9 +268,21 @@ export default function StampingPage(): JSX.Element {
     </Toast>
     <div className="d-flex-column" style={{ width: '48%', margin: '1%' }}>
       <Card>
-        <InputGroup>
-          <Input onChange={onFileChanged} type="file"></Input>
-        </InputGroup>
+        <div className="d-flex" style={{ borderBottom: '1px solid #444' }}>
+          <Button color={inputMode === 'file' ? 'primary' : 'secondary'} onClick={() => setInputMode('file')} style={{ flex: 1, borderRadius: 0 }}>File Upload</Button>
+          <Button color={inputMode === 'docId' ? 'primary' : 'secondary'} onClick={() => setInputMode('docId')} style={{ flex: 1, borderRadius: 0 }}>Document ID</Button>
+        </div>
+        {inputMode === 'file' ? (
+          <InputGroup>
+            <Input onChange={onFileChanged} type="file" />
+          </InputGroup>
+        ) : (
+          <InputGroup>
+            <InputGroupText>Doc ID:</InputGroupText>
+            <Input value={documentId} onChange={(e) => setDocumentId(e.target.value)} placeholder="Document ID" />
+            <Button color="primary" onClick={loadDocument}>Load</Button>
+          </InputGroup>
+        )}
         <div className="d-flex" style={{ marginTop: '1%' }}>
           <Button onClick={prev} color="primary" style={{ width: '48%', margin: '1%' }}>&lt;</Button>
           <Button onClick={next} color="primary" style={{ width: '48%', margin: '1%' }}>&gt;</Button>
@@ -231,15 +314,20 @@ export default function StampingPage(): JSX.Element {
             {getStampedPages().length > 0 && (
               <div style={{ display: 'flex', gap: '0.5%', flexWrap: 'wrap', alignItems: 'center' }}>
                 <span style={{ color: '#aaa', fontSize: '0.9em' }}>Stamped pages:</span>
-                {getStampedPages().map((stampedPage) => (
+                {getStampedPages().map((stamp, i) => (
                   <Button
-                    key={stampedPage}
-                    onClick={() => setPage(stampedPage)}
-                    color={stampedPage === page ? 'success' : 'info'}
+                    key={i}
+                    onClick={() => setPage(stamp.coordinate.page)}
                     size="sm"
-                    style={{ padding: '0.3% 0.8%', fontSize: '0.85em' }}
+                    style={{
+                      padding: '0.3% 0.8%',
+                      fontSize: '0.85em',
+                      border: `1px solid ${stampTypeStyle[stamp.stampType].borderColor}`,
+                      ...stampTypeStyle[stamp.stampType],
+                      opacity: stamp.coordinate.page === page ? 1 : 0.6,
+                    }}
                   >
-                    {stampedPage}
+                    {stamp.coordinate.page}
                   </Button>
                 ))}
               </div>
@@ -259,9 +347,10 @@ export default function StampingPage(): JSX.Element {
         <Input defaultValue={signSrc} onChange={(e) => setSignSrc(e.target.value)}></Input>
       </InputGroup>
       <div className="d-flex">
-        <Button onClick={() => setStampType("VIDA")} style={{ width: '31%', margin: '1%' }} color={primaryIf("VIDA")}>VIDA</Button>
-        <Button onClick={() => setStampType("IMAGE")} style={{ width: '31%', margin: '1%' }} color={primaryIf("IMAGE")}>IMAGE</Button>
-        <Button onClick={() => setStampType("TEXT")} style={{ width: '31%', margin: '1%' }} color={primaryIf("TEXT")}>TEXT</Button>
+        <Button onClick={() => setStampType("VIDA")} style={{ width: '23%', margin: '1%' }} color={primaryIf("VIDA")}>VIDA</Button>
+        <Button onClick={() => setStampType("IMAGE")} style={{ width: '23%', margin: '1%' }} color={primaryIf("IMAGE")}>IMAGE</Button>
+        <Button onClick={() => setStampType("TEXT")} style={{ width: '23%', margin: '1%' }} color={primaryIf("TEXT")}>TEXT</Button>
+        <Button onClick={() => setStampType("DISABLE")} style={{ width: '23%', margin: '1%', ...(stampType === 'DISABLE' ? { backgroundColor: '#9C27B0', borderColor: '#9C27B0' } : {}) }} color={stampType === 'DISABLE' ? undefined : 'secondary'}>DISABLE</Button>
       </div>
       <StampJsonEditor data={textAreaBody} fileName={fileName} onUpdate={(updated) => {
         setStamps(updated);

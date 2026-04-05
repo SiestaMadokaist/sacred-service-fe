@@ -24,6 +24,7 @@ export interface IStamp {
     width?: number;
     height?: number;
   }
+  isDisabled: boolean;
 }
 export interface IPDFPage {
   page: number;
@@ -63,7 +64,9 @@ export function StampLocation(props: { stamp: IStamp; onClick: () => void; onCtr
       marginLeft: coordinate.x,
       fontSize: '0.8em',
       cursor: 'pointer',
+      opacity: stamp.isDisabled ? 0.7 : 1,
     }}
+    title={stamp.name}
     onClick={handleClick}>
     {stamp.stampType}
   </div>)
