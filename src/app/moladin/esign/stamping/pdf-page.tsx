@@ -33,6 +33,7 @@ export interface IPDFPage {
   addStamp: (coordinate: ICoordinate, canvas: ICanvas) => void;
   removeStamp: (name: string) => void;
   duplicateStamp: (stamp: IStamp) => void;
+  nameMap?: Record<string, string>;
 }
 
 const stampBG: Record<IStamp['stampType'], string> = {
@@ -41,8 +42,8 @@ const stampBG: Record<IStamp['stampType'], string> = {
   TEXT: 'green',
 }
 
-export function StampLocation(props: { stamp: IStamp; onClick: () => void; onCtrlClick: () => void }): JSX.Element {
-  const { stamp, onClick, onCtrlClick } = props;
+export function StampLocation(props: { stamp: IStamp; onClick: () => void; onCtrlClick: () => void; nameMap?: Record<string, string> }): JSX.Element {
+  const { stamp, onClick, onCtrlClick, nameMap } = props;
   const { coordinate, canvas } = stamp;
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -66,7 +67,7 @@ export function StampLocation(props: { stamp: IStamp; onClick: () => void; onCtr
       cursor: 'pointer',
       opacity: stamp.isDisabled ? 0.7 : 1,
     }}
-    title={stamp.name}
+    title={nameMap?.[stamp.name] ?? stamp.name}
     onClick={handleClick}>
     {stamp.stampType}
   </div>)
@@ -93,7 +94,7 @@ export function PDFPage(props: IPDFPage): JSX.Element {
   const stampsInPage = props.stamps.filter((s) => s.coordinate.page === props.page);
   return (<div>
     <div style={{ position: 'relative' }}>
-      {stampsInPage.map((s) => (<StampLocation key={s.name} stamp={s} onClick={() => props.removeStamp(s.name)} onCtrlClick={() => props.duplicateStamp(s)} />))}
+      {stampsInPage.map((s) => (<StampLocation key={s.name} stamp={s} onClick={() => props.removeStamp(s.name)} onCtrlClick={() => props.duplicateStamp(s)} nameMap={props.nameMap} />))}
     </div>
 
     <img src={props.src} alt="" style={{ position: 'relative' }} onClick={onClick}></img>

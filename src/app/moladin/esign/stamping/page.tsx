@@ -151,6 +151,11 @@ export default function StampingPage(): JSX.Element {
 
   const textAreaBody = [...vidaStamps, ...imageStamps, ...textStamps];
 
+  const nameMap: Record<string, string> = {};
+  sortedStamps.filter(x => x.stampType === 'VIDA').forEach((x, i) => { nameMap[x.name] = `vidastamp${i + 1}`; });
+  sortedStamps.filter(x => x.stampType === 'IMAGE').forEach((x, i) => { nameMap[x.name] = `${imagePrefix}${i + 1}`; });
+  sortedStamps.filter(x => x.stampType === 'TEXT').forEach((x, i) => { nameMap[x.name] = `textstamp${i + 1}`; });
+
   const onFileChanged = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ?? [];
     const file = files[0];
@@ -195,7 +200,6 @@ export default function StampingPage(): JSX.Element {
       name: s.name,
       trigger: s.trigger ?? 'AUTO',
       ...(s.codeDocument != null && { codeDocument: s.codeDocument }),
-      // ...(s.source != null && { source: s.source }),
       source: s.stampType === 'IMAGE' ? s.source ?? signSrc : undefined,
       style: {
         size: s.style?.size,
@@ -333,7 +337,7 @@ export default function StampingPage(): JSX.Element {
               </div>
             )}
           </div>
-          <PDFPage page={page} src={image} stamps={stamps} addStamp={addStamp} removeStamp={removeStamp} duplicateStamp={duplicateStamp}></PDFPage>
+          <PDFPage page={page} src={image} stamps={stamps} addStamp={addStamp} removeStamp={removeStamp} duplicateStamp={duplicateStamp} nameMap={nameMap}></PDFPage>
         </CardBody>
       </Card>
     </div>
@@ -352,7 +356,7 @@ export default function StampingPage(): JSX.Element {
         <Button onClick={() => setStampType("TEXT")} style={{ width: '23%', margin: '1%' }} color={primaryIf("TEXT")}>TEXT</Button>
         <Button onClick={() => setStampType("DISABLE")} style={{ width: '23%', margin: '1%', ...(stampType === 'DISABLE' ? { backgroundColor: '#9C27B0', borderColor: '#9C27B0' } : {}) }} color={stampType === 'DISABLE' ? undefined : 'secondary'}>DISABLE</Button>
       </div>
-      <StampJsonEditor data={textAreaBody} fileName={fileName} onUpdate={(updated) => {
+      <StampJsonEditor data={textAreaBody} fileName={inputMode === 'docId' && documentId ? `${documentId}.stamps` : fileName} onUpdate={(updated) => {
         setStamps(updated);
         // Extract image prefix from first IMAGE stamp if it exists
         const firstImageStamp = updated.find((stamp: any) => stamp.stampType === 'IMAGE');

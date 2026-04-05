@@ -58,7 +58,7 @@ export function StampJsonEditor({ data, fileName, onUpdate }: StampJsonEditorPro
 
     let downloadFileName = 'stamps.json';
     if (fileName) {
-      downloadFileName = fileName.replace(/\.pdf$/i, '.json');
+      downloadFileName = fileName.replace(/\.pdf$/i, '') + '.json';
     }
 
     link.href = url;
