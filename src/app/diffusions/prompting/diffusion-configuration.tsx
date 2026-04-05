@@ -12,7 +12,7 @@ export const DiffusionConfiguration = (): JSX.Element => {
   };
 
   const [startStop, setStartStop] = useLocalStorage<[number, number]>('diffusion.startstop', [1, templates.length]);
-
+  const [start, stop] = startStop;
   return (
     <div>
       <div className="w-100 d-flex flex-wrap mt-3 gap-2">
@@ -26,7 +26,11 @@ export const DiffusionConfiguration = (): JSX.Element => {
         </InputGroup>
       </div>
       <div className="w-100 d-flex flex-wrap mt-2 gap-2">
-        <InputGroup style={{ width: '49%' }}>
+        <InputGroup style={{ width: '24%' }}>
+          <InputGroupText>Subseed:</InputGroupText>
+          <Input min="0" max="1" step="0.05" type="number" value={ctx.subseedStrength} onChange={(e) => ctx.setSubseedStrength(parseFloat(e.target.value))} />
+        </InputGroup>
+        <InputGroup style={{ width: '24%' }}>
           <InputGroupText>Method:</InputGroupText>
           <Input type="select" value={ctx.samplingMethod} onChange={(e) => ctx.setSamplingMethod(e.target.value as any)}>
             {SAMPLING_METHODS.map((method) => (
@@ -54,7 +58,7 @@ export const DiffusionConfiguration = (): JSX.Element => {
           />
         </div>
         <div className="w-18">
-          <Button onClick={() => ctx.pushQueue(ctx.templates.slice(startStop[0] - 1, startStop[1] - 1))} color="warning" style={{ width: '100%' }}>Queue</Button>
+          <Button onClick={() => ctx.pushQueue(ctx.templates.slice(start - 1, stop))} color="warning" style={{ width: '100%' }}>Queue</Button>
         </div>
       </div>
     </div>

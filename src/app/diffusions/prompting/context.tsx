@@ -136,6 +136,7 @@ interface IPromptingContext {
   activeIndex: number;
   nIter: number;
   stepCount: number;
+  subseedStrength: number;
   samplingMethod: SamplingMethod;
   samplingSchedule: SamplingSchedule;
   showImage: (imgURL: string) => void;
@@ -143,6 +144,7 @@ interface IPromptingContext {
   setSeed: (seed: number) => void;
   seed: number;
   setStepCount: (stepCount: number) => void;
+  setSubseedStrength: (strength: number) => void;
   setSamplingMethod: (method: SamplingMethod) => void;
   setSamplingSchedule: (schedule: SamplingSchedule) => void;
   setVariables: (variables: Record<string, string>) => void;
@@ -188,6 +190,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const [nIter, setNIter] = useLocalStorage<number>('diffusions.nIter', 2);
   const [stepCount, setStepCount] = useLocalStorage<number>('diffusions.stepCount', 30);
+  const [subseedStrength, setSubseedStrength] = useLocalStorage<number>('diffusions.subseedStrength', 0.2);
   const [samplingMethod, setSamplingMethod] = useLocalStorage<SamplingMethod>('diffusions.method', 'DPM++ 2M');
   const [samplingSchedule, setSamplingSchedule] = useLocalStorage<SamplingSchedule>('diffusions.schedule', 'Automatic');
 
@@ -234,7 +237,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
       height: 1200,
       steps: stepCount,
       subseed: undefined,
-      subseed_strength: 0.2,
+      subseed_strength: subseedStrength,
       sampler_name: samplerName,
       seed: seed ?? Math.floor(Math.random() * 10_000_000),
     };
@@ -424,10 +427,12 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
       },
       varCounts,
       stepCount,
+      subseedStrength,
       nIter,
       samplingMethod,
       samplingSchedule,
       setStepCount,
+      setSubseedStrength,
       setNIter,
       setSamplingMethod,
       setSamplingSchedule,
