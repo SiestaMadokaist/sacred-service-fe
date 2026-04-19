@@ -111,6 +111,8 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
     return !template.includes('},');
   }
 
+  const templateHash = (localTemplate.split('').reduce((h, c) => (Math.imul(31, h) + c.charCodeAt(0)) | 0, 0) >>> 0).toString(16);
+
   const colorProperties: React.CSSProperties = (() => {
     if (!valid) {
       return { backgroundColor: "#6b1f1f", color: "#f8d1d1" };
@@ -252,7 +254,7 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
         </div>
       </Col>
       <Col>
-        <p onClick={addTemplate} style={{ cursor: 'pointer', textAlign: 'center' }} className="w-100 color-white">{props.index + 1} : {orientation.toUpperCase()}</p>
+        <p onClick={addTemplate} style={{ cursor: 'pointer', textAlign: 'center' }} className="w-100 color-white">{props.index + 1} : {templateHash.toUpperCase()} : {orientation.toUpperCase()}</p>
         <pre>
           <PromptViewer prompt={ctx.buildPrompt(localTemplate)} />
         </pre>

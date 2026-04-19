@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { ITemplate, usePromptContext } from "./context";
 import { DndContext, closestCenter, DragEndEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { TemplateEditor } from "./template-editor";
@@ -9,9 +10,10 @@ interface SortableTemplateEditorProps {
   id: string;
   index: number;
   template: ITemplate;
+  minimized: boolean;
 }
 
-const SortableTemplateEditor = ({ id, index, template }: SortableTemplateEditorProps) => {
+const SortableTemplateEditor = ({ id, index, template, minimized }: SortableTemplateEditorProps) => {
   const { attributes, listeners, setNodeRef, transform, transition, setActivatorNodeRef } = useSortable({ id });
 
   const style = {
@@ -35,7 +37,7 @@ const SortableTemplateEditor = ({ id, index, template }: SortableTemplateEditorP
       >
         ⋮⋮
       </div>
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: 1, maxHeight: minimized ? '3em' : undefined, overflow: 'hidden' }}>
         <TemplateEditor index={index} template={template} />
       </div>
     </div>
@@ -44,6 +46,7 @@ const SortableTemplateEditor = ({ id, index, template }: SortableTemplateEditorP
 
 export const TemplateEditors = (): JSX.Element => {
   const ctx = usePromptContext();
+  const [minimized, setMinimized] = useState(false);
 
   const { templates } = ctx;
 
@@ -66,11 +69,19 @@ export const TemplateEditors = (): JSX.Element => {
 
   return (
     <div className="d-flex flex-column" style={{ height: '100%' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '2px 4px', borderBottom: '1px solid #333' }}>
+        <button
+          onClick={() => setMinimized(m => !m)}
+          style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '0.75em', padding: '0 4px' }}
+        >
+          {minimized ? '▼ expand all' : '▲ minimize all'}
+        </button>
+      </div>
       <div style={{ flex: '0 0 80%', overflow: 'auto', scrollbarWidth: 'none' }}>
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={templates.map((_, i) => `template-${i}`)} strategy={verticalListSortingStrategy}>
             {templates.map((_, i) => (
-              <SortableTemplateEditor key={`template-${i}`} id={`template-${i}`} index={i} template={ctx.templates[i]} />
+              <SortableTemplateEditor key={`template-${i}`} id={`template-${i}`} index={i} template={ctx.templates[i]} minimized={minimized} />
             ))}
           </SortableContext>
         </DndContext>
