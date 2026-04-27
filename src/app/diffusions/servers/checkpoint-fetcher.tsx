@@ -44,18 +44,19 @@ export interface ICheckpointDownloader {
 }
 export function CheckpointDownloader(props: ICheckpointDownloader): JSX.Element {
   const { api } = props;
-  const [downloadURL, setDownloadURL] = useState('');
+  // const [downloadURL, setDownloadURL] = useState('');
+  const [modelId, setModelId] = useState('');
   const onClick = async () => {
     await api.post('/sd-models/download', { 
-      url: downloadURL, 
+      modelId, 
       ts: Date.now(), 
       type: 'checkpoints',
     });
   }
   return (<div className="d-flex flex-wrap w-100 mb-3">
     <InputGroup>
-      <InputGroupText>URL</InputGroupText>
-      <Input placeholder="https://civitai-delivery-worker-prod..." value={downloadURL} onChange={(e) => setDownloadURL(e.target.value)}></Input>
+      <InputGroupText>ModelId:</InputGroupText>
+      <Input placeholder="https://civitai-delivery-worker-prod..." value={modelId} onChange={(e) => setModelId(e.target.value)}></Input>
     </InputGroup>
     <Button className="w-100 mt-2" color="success" onClick={onClick}>Download Checkpoint</Button>
   </div>)

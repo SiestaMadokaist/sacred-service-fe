@@ -7,11 +7,11 @@ export interface IFetchHTTP {
 }
 export const FromHTTP = (props: IFetchHTTP): JSX.Element => {
   const { computeAPI } = props;
-  const [url, setURL] = useState<string>("");
+  const [modelId, setURL] = useState<string>("");
   const [force, setForce] = useState<boolean>(false);
   const action = async () => {
     await computeAPI.post('/sd-models/download', {
-      url,
+      modelId,
       ts: Date.now(),
       type: "loras",
       force,
@@ -19,8 +19,8 @@ export const FromHTTP = (props: IFetchHTTP): JSX.Element => {
   }
   return (<div className="w-100 d-flex flex-wrap">
     <InputGroup>
-      <InputGroupText>URL</InputGroupText>
-      <Input placeholder="https://civitai-delivery-worker-prod.5ac063..." value={url} onChange={(e) => setURL(e.target.value)}></Input>
+      <InputGroupText>ModelID:</InputGroupText>
+      <Input placeholder="" value={modelId} onChange={(e) => setURL(e.target.value)}></Input>
     </InputGroup>
     <Button color="success" onClick={action} className="w-100 mt-2">Download Lora</Button>
   </div>);

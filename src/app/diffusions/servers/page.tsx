@@ -41,6 +41,26 @@ interface INamedRegion {
   id: string;
 }
 
+const badge: React.CSSProperties = {
+  display: "inline-block",
+  borderRadius: "12px",
+  padding: "2px 10px",
+  fontSize: "0.8em",
+  fontWeight: 600,
+  letterSpacing: "0.03em",
+  whiteSpace: "nowrap",
+};
+
+const stateStyle = (state: string): React.CSSProperties => {
+  switch (state) {
+    case "running":    return { ...badge, backgroundColor: "#198754", color: "#d1f5e0" };
+    case "stopped":    return { ...badge, backgroundColor: "#495057", color: "#ced4da" };
+    case "pending":    return { ...badge, backgroundColor: "#664d00", color: "#ffc107" };
+    case "terminated": return { ...badge, backgroundColor: "#1a1a1a", color: "#adb5bd" };
+    default:           return { ...badge, backgroundColor: "#343a40", color: "#f8f9fa" };
+  }
+};
+
 const regions: INamedRegion[] = [{
   name: 'sydney',
   id: 'ap-southeast-2',
@@ -207,6 +227,7 @@ const ComputeManager: React.FC = () => {
                 <tr>
                   <th>Instance ID</th>
                   <th>State</th>
+                  <th>IP</th>
                   <th>Type</th>
                   <th>Launch Time</th>
                     <th onClick={() => setForce(!force)} className="d-flex flex-row" style={{ cursor: "pointer", color: force ? '#dc3545' : 'black' }}>
@@ -220,7 +241,8 @@ const ComputeManager: React.FC = () => {
                 {instances.map((inst) => (
                   <tr key={inst.InstanceId}>
                     <td>{inst.InstanceId}</td>
-                    <td>{inst.State.Name}</td>
+                    <td><span style={stateStyle(inst.State.Name)}>{inst.State.Name}</span></td>
+                    <td>{inst.PublicIpAddress ?? "-"}</td>
                     <td>{inst.InstanceType}</td>
                     <td>{inst.LaunchTime ?? "-"}</td>
                     <td>
@@ -231,7 +253,6 @@ const ComputeManager: React.FC = () => {
                         onClick={() =>
                           triggerAction(inst.InstanceId, "start")
                         }
-                        disabled={inst.State.Name !== "stopped"}
                       >
                         Start
                       </Button>
@@ -242,7 +263,6 @@ const ComputeManager: React.FC = () => {
                         onClick={() =>
                           triggerAction(inst.InstanceId, "stop")
                         }
-                        disabled={inst.State.Name !== "running"}
                       >
                         Stop
                       </Button>
@@ -253,7 +273,6 @@ const ComputeManager: React.FC = () => {
                         onClick={() =>
                           triggerAction(inst.InstanceId, "reboot")
                         }
-                        disabled={inst.State.Name !== "running"}
                       >
                         Reboot
                       </Button>

@@ -144,8 +144,10 @@ export default function QueuePage(): JSX.Element {
       </div>
       <div className="w-50">
         <div className="w-90 ml-5">
-          <div className="w-100 d-flex flex-row mt-2" style={{ height: '30vh' }}>
-            <pre style={{ color: 'white', whiteSpace: 'pre-wrap', maxHeight: '100%' }}>{report.prompts}</pre>
+          <div className="w-100 d-flex flex-column mt-2" style={{ height: '30vh', overflowY: 'auto' }}>
+            <pre style={{ color: 'wheat', whiteSpace: 'pre-wrap', margin: 0, minHeight: '1.2rem' }}>{report.checkpoint}</pre>
+            <hr style={{ borderColor: 'gray', margin: '4px 0' }} />
+            <pre style={{ color: 'white', whiteSpace: 'pre-wrap', margin: 0 }}>{report.prompts}</pre>
           </div>
 
           {queueData.map((x, i) => (<QueueElement renew={fetchQueue} promptAPI={promptAPI} key={`queue-${i}`} task={x} />))}
