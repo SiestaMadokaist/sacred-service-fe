@@ -116,19 +116,15 @@ const ComputeManager: React.FC = () => {
     }
   };
 
-  const launchNewInstance = async () => {
+  const launchNewInstance = async (onDemand: boolean = false) => {
     try {
-      const params = {
-        checkpoint,
-        ts: Date.now(),
-      }
-      const ans = confirm(`Starting instance with key: ${checkpoint?.key}`);
+      const ts = Date.now();
+      const params = { checkpoint, ts, onDemand }
+      const instanceType = onDemand ? "On Demand" : "Spot";
+      const ans = confirm(`Starting ${instanceType} instance with key: ${checkpoint?.key}`);
       if (!ans) { return; }
       await computeAPI.post("/", params);
       await fetchInstances();
-      const instanceId = instances[0].InstanceId;
-      await new Promise((resolve) => setTimeout(resolve, 60 * 1000));
-      await computeAPI.post(`/${instanceId}/reboot`);
     } catch {
       setError("Failed to launch a new instance.");
     }
@@ -207,9 +203,12 @@ const ComputeManager: React.FC = () => {
         <>
             {true && (
               <Row className="d-flex align-items-center justify-content-between" >
-              <Col>
-                <Button color="success" onClick={launchNewInstance}>
-                  Launch New Instance
+              <Col className="d-flex gap-2">
+                <Button color="success" onClick={() => launchNewInstance(false)}>
+                  Launch Spot Instance
+                </Button>
+                <Button color="danger" onClick={() => launchNewInstance(true)}>
+                  Launch On Demand
                 </Button>
               </Col>
                 <Col>

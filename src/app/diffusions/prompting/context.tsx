@@ -142,6 +142,7 @@ interface IPromptingContext {
   showImage: (imgURL: string) => void;
   setNIter: (nIter: number) => void;
   setSeed: (seed: number) => void;
+  titles: string[];
   seed: number;
   setStepCount: (stepCount: number) => void;
   setSubseedStrength: (strength: number) => void;
@@ -152,6 +153,7 @@ interface IPromptingContext {
   buildPrompt: (template: string) => string;
   setTemplate: (index: number, template: ITemplate) => void;
   addTemplate: (after: number, template: ITemplate) => void;
+  deleteTemplate: (index: number) => void;
   reorderTemplates: (oldIndex: number, newIndex: number) => void;
   templates: ITemplate[];
   pushQueue: (ts: ITemplate[]) => Promise<void>;
@@ -175,6 +177,17 @@ const negativePrompt = `lowres, worst aesthetic, bad quality, worst quality, bad
 lossy-lossless, unfinished, ugly, poorly drawn, greyscale, 
 watermark, text, extra digits, extra finger, blood`;
 
+const isTag = (x: string) => {
+  return x.match(/^[\w _]+$/);
+}
+// const tagCount = (set: Set<string>): Record<string, string> => {
+//   const result: Record<string, string> = {};
+//   for (const s of set.values()) {
+//     result[s] = (result[s] ?? 0) + 1
+//   }
+//   return result;
+// }
+
 export function PromptProvider(props: IPromptProvider): JSX.Element {
   const [hub] = useState(apiHub());
   const promptAPI = useApi(hub, '/prompts');
@@ -186,6 +199,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
   const [varCounts, setVarCounts] = useState<Record<string, number>>({});
 
   const [templates, _setTemplates] = useState<ITemplate[]>([]);
+  const [titles, setTitles] = useState<string[]>([]);
   const [templateId, setTemplateId] = useState<string>('');
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const [nIter, setNIter] = useLocalStorage<number>('diffusions.nIter', 2);
@@ -198,6 +212,25 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
   const samplerName = samplingSchedule === 'Automatic'
     ? samplingMethod
     : `${samplingMethod} ${samplingSchedule}`;
+
+  const setTitle = () => {
+    const tagLists = templates
+      .map((x) => x.prompt.split(/[,\n]+/).map((x) => x.trim()).filter(isTag))
+    const tagSets = tagLists.map((x) => new Set(x));
+    const newTitles: string[] = [];
+    for (let i = 0; i < templates.length; i++) {
+      const tagSet = tagSets[i];
+      const rest = tagSets.filter((_, j) => j !== i);
+      const combined = rest.reduce((p, c) => p.union(c));
+      const unique = tagSet.difference(combined);
+      newTitles.push(Array.from(unique).join(', '));
+    }
+    setTitles(newTitles)
+  }
+
+  useEffect(() => {
+    setTitle();
+  }, [templates]);
 
   const buildAlwaysOnScripts = (controlnet?: ITemplate['controlnet'], regPrompt?: IRegionalPrompterArgs): undefined | { controlnet?: ITemplate['controlnet'], "Regional Prompter"?: IRegionalPrompterArgs } => {
     if (controlnet && regPrompt) {
@@ -306,6 +339,12 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
     setActiveIndex(index);
     const newTemplates = [...templates];
     newTemplates[index] = template;
+    setTemplates(newTemplates);
+  }
+
+  const deleteTemplate = (index: number) => {
+    const newTemplates = [...templates];
+    newTemplates.splice(index, 1);
     setTemplates(newTemplates);
   }
 
@@ -441,6 +480,8 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
       templateId,
       setTemplate,
       addTemplate,
+      deleteTemplate,
+      titles,
       reorderTemplates,
       templates,
       setTemplateId,

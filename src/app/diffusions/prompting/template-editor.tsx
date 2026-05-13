@@ -3,6 +3,7 @@ import { ITemplate, usePromptContext } from "./context";
 import { Button, Col, Input, Label, Row } from "reactstrap";
 import { useDebounce } from "use-debounce";
 import { ImageUrlDropzone } from "../../../components/DragNDrop/ImageURLDropzone";
+import { HoldToDelete } from "../../../components/HoldToDelete";
 import { AutocompleteTextarea } from "@/components/autocomplete";
 import OpenAI from "openai";
 import useLocalStorage from "use-local-storage";
@@ -111,8 +112,9 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
     return !template.includes('},');
   }
 
-  const templateHash = (localTemplate.split('').reduce((h, c) => (Math.imul(31, h) + c.charCodeAt(0)) | 0, 0) >>> 0).toString(16);
+  // const templateHash = (localTemplate.split('').reduce((h, c) => (Math.imul(31, h) + c.charCodeAt(0)) | 0, 0) >>> 0).toString(16);
 
+  const templateHash = ctx.titles[props.index] ?? '';
   const colorProperties: React.CSSProperties = (() => {
     if (!valid) {
       return { backgroundColor: "#6b1f1f", color: "#f8d1d1" };
@@ -247,6 +249,7 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
         </AutocompleteTextarea>
       </Col>
       <Col sm="2" className="d-flex flex-wrap justify-content-center align-items-center">
+        <HoldToDelete onDelete={() => ctx.deleteTemplate(props.index)} />
         <ImageUrlDropzone onUrlDrop={(imageURL) => setControlnetImage(imageURL)} />
         <div style={{ cursor: 'pointer' }} className="d-flex bg-white w-100 justify-content-center align-items-center flex-row h-10">
           <Button onClick={onClick('portrait')} disabled={orientation === 'portrait'} color="primary" style={{ fontSize: '0.8em' }} className="w-40">P</Button>
@@ -254,7 +257,10 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
         </div>
       </Col>
       <Col>
-        <p onClick={addTemplate} style={{ cursor: 'pointer', textAlign: 'center' }} className="w-100 color-white">{props.index + 1} : {templateHash.toUpperCase()} : {orientation.toUpperCase()}</p>
+        <div onClick={addTemplate} style={{ cursor: 'pointer', textAlign: 'center', borderBottom: '1px silver dashed' }} className="w-100 color-white">
+          <div style={{ fontSize: '0.85em', opacity: 0.7 }}>{props.index + 1} : {orientation.toUpperCase()}</div>
+          <div>{templateHash}</div>
+        </div>
         <pre>
           <PromptViewer prompt={ctx.buildPrompt(localTemplate)} />
         </pre>
