@@ -180,13 +180,13 @@ watermark, text, extra digits, extra finger, blood`;
 const isTag = (x: string) => {
   return x.match(/^[\w _]+$/);
 }
-// const tagCount = (set: Set<string>): Record<string, string> => {
-//   const result: Record<string, string> = {};
-//   for (const s of set.values()) {
-//     result[s] = (result[s] ?? 0) + 1
-//   }
-//   return result;
-// }
+const tagCount = (set: Set<string>): Record<string, string> => {
+  const result: Record<string, string> = {};
+  for (const s of set.values()) {
+    result[s] = (result[s] ?? 0) + 1
+  }
+  return result;
+}
 
 export function PromptProvider(props: IPromptProvider): JSX.Element {
   const [hub] = useState(apiHub());
@@ -217,13 +217,17 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
     const tagLists = templates
       .map((x) => x.prompt.split(/[,\n]+/).map((x) => x.trim()).filter(isTag))
     const tagSets = tagLists.map((x) => new Set(x));
+    const globalCount: Record<string, number> = {};
+    tagSets.forEach((tagSet) => {
+      tagSet.forEach((tag) => {
+        globalCount[tag] = (globalCount[tag] ?? 0) + 1;
+      });
+    });
     const newTitles: string[] = [];
     for (let i = 0; i < templates.length; i++) {
-      const tagSet = tagSets[i];
-      const rest = tagSets.filter((_, j) => j !== i);
-      const combined = rest.reduce((p, c) => p.union(c));
-      const unique = tagSet.difference(combined);
-      newTitles.push(Array.from(unique).join(', '));
+      const tags = Array.from(tagSets[i]);
+      tags.sort((a, b) => (globalCount[a] ?? 0) - (globalCount[b] ?? 0));
+      newTitles.push(tags.slice(0, 7).join(', '));
     }
     setTitles(newTitles)
   }

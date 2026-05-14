@@ -4,9 +4,10 @@ import { Button, Col, Input, Label, Row } from "reactstrap";
 import { useDebounce } from "use-debounce";
 import { ImageUrlDropzone } from "../../../components/DragNDrop/ImageURLDropzone";
 import { HoldToDelete } from "../../../components/HoldToDelete";
-import { AutocompleteTextarea } from "@/components/autocomplete";
+// import { AutocompleteTextarea } from "@/components/autocomplete";
 import OpenAI from "openai";
 import useLocalStorage from "use-local-storage";
+import { AutocompleteTextarea } from "../../../components/autocomplete";
 
 export interface ITemplateEditor {
   index: number;
@@ -43,6 +44,9 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
   const [valid, setValid] = useState(true);
   const [controlnetImage, setControlnetImage] = useState<string | undefined>();
   const [aiLoading, setAiLoading] = useState(false);
+
+  const normalizeNIter = (v: number | undefined) => (v === undefined || v === -1 ? undefined : v);
+  const [localNIter, setLocalNIter] = useState<number | undefined>(normalizeNIter(props.template.nIter ?? -1));
 
   const [openAIKey] = useLocalStorage("openai_api", "");
   const [selectedModel] = useLocalStorage("openai_model", "gpt-4o-mini");
@@ -105,7 +109,8 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
   useEffect(() => {
     setLocalTemplate(props.template.prompt);
     setOrientation(props.template.orientation ?? 'portrait');
-    setControlnetImage(props.template.controlnet?.source)
+    setControlnetImage(props.template.controlnet?.source);
+    setLocalNIter(normalizeNIter(props.template.nIter));
   }, [props.template])
 
   const validateTemplate = (template: string) => {
@@ -241,19 +246,34 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
           style={{ ...colorProperties }}
         >
           <div className="d-flex w-100 mt-2 gap-2">
-            <Button onClick={pushQueue} style={{ color: 'yellow', width: '80%' }} color="success">Queue Single</Button>
+            <Input
+              type="number"
+              min={-1}
+              value={localNIter ?? ''}
+              placeholder={String(ctx.nIter)}
+              style={{ width: '20%' }}
+              onChange={(e) => {
+                const parsed = e.target.value === '' ? undefined : parseInt(e.target.value, 10);
+                const val = normalizeNIter(parsed);
+                setLocalNIter(val);
+                ctx.setTemplate(props.index, { ...ctx.templates[props.index], nIter: val });
+              }}
+            />
+            <Button onClick={pushQueue} style={{ color: 'yellow', width: '60%' }} color="success">Queue Single</Button>
             <Button onClick={enhanceWithAI} disabled={aiLoading} style={{ width: '20%' }} color="primary">
               {aiLoading ? "..." : "AI"}
             </Button>
           </div>
         </AutocompleteTextarea>
       </Col>
-      <Col sm="2" className="d-flex flex-wrap justify-content-center align-items-center">
-        <HoldToDelete onDelete={() => ctx.deleteTemplate(props.index)} />
-        <ImageUrlDropzone onUrlDrop={(imageURL) => setControlnetImage(imageURL)} />
-        <div style={{ cursor: 'pointer' }} className="d-flex bg-white w-100 justify-content-center align-items-center flex-row h-10">
-          <Button onClick={onClick('portrait')} disabled={orientation === 'portrait'} color="primary" style={{ fontSize: '0.8em' }} className="w-40">P</Button>
-          <Button onClick={onClick('landscape')} disabled={orientation === 'landscape'} color="primary" style={{ fontSize: '0.8em' }} className="w-40 ml-2">L</Button>
+      <Col sm="2" className="d-flex justify-content-center align-items-start">
+        <div className="d-flex flex-column align-items-center gap-2" style={{ paddingTop: '0.5rem' }}>
+          <HoldToDelete onDelete={() => ctx.deleteTemplate(props.index)} />
+          <ImageUrlDropzone onUrlDrop={(imageURL) => setControlnetImage(imageURL)} />
+          <div className="d-flex justify-content-center gap-1">
+            <Button onClick={onClick('portrait')} disabled={orientation === 'portrait'} color="primary" style={{ fontSize: '0.8em' }} className="w-40">P</Button>
+            <Button onClick={onClick('landscape')} disabled={orientation === 'landscape'} color="primary" style={{ fontSize: '0.8em' }} className="w-40">L</Button>
+          </div>
         </div>
       </Col>
       <Col>

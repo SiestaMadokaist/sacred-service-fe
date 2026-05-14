@@ -3,7 +3,7 @@ import { ControlSearch } from "../../../components/Artbox/ViewerControl.Filter";
 import useLocalStorage from "use-local-storage";
 import { AxiosInstance } from "axios";
 // import { useDebounce } from "use-debounce";
-import { ControlDirectory } from "@/components/Artbox/ViewerControl.Directory";
+import { ControlDirectory } from "../../../components/Artbox/ViewerControl.Directory";
 
 export interface ISrcControl {
   collectionAPI: AxiosInstance

@@ -7,7 +7,7 @@ import { apiHub } from "../../../api/hub";
 import { SrcControl } from "./src-control";
 import { DstControl } from "./dst-control";
 import { useToast } from "../../../hooks/useToast";
-import { GalleryProvider, useGallery } from "@/components/Artbox/context";
+import { GalleryProvider, useGallery } from "../../../components/Artbox/context";
 
 function CollectionManagerInner() {
   // const [urls, setUrls] = useLocalStorage<string[]>('filter-urls', []);
