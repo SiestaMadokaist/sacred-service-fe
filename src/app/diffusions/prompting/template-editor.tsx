@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react"
 import { usePromptContext } from "./context";
-import { Template } from "./template";
+import { Template } from "./prompt-template";
 import { Button, Col, Input, Label, Row } from "reactstrap";
 import { useDebounce } from "use-debounce";
 import { ImageUrlDropzone } from "../../../components/DragNDrop/ImageURLDropzone";
-import { HoldToDelete } from "../../../components/HoldToDelete";
+import { IconTrash } from "@tabler/icons-react";
 // import { AutocompleteTextarea } from "@/components/autocomplete";
 import OpenAI from "openai";
 import useLocalStorage from "use-local-storage";
@@ -251,7 +251,17 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
       </Col>
       <Col sm="2" className="d-flex justify-content-center align-items-start">
         <div className="d-flex flex-column align-items-center gap-2 w-100" style={{ paddingTop: '0.5rem' }}>
-          <HoldToDelete onDelete={() => ctx.deleteTemplate(props.index)} />
+          <Button
+            color="danger"
+            onClick={() => ctx.deleteTemplate(props.index)}
+            disabled={localTemplate.trim().length > 0}
+            title={localTemplate.trim().length > 0 ? "Clear the prompt before deleting" : "Delete"}
+            className="d-flex align-items-center justify-content-center gap-1 w-100"
+            style={{ fontSize: '0.8em' }}
+          >
+            <IconTrash className="bg-transparent" size={16} />
+            {localTemplate.trim().length > 0 ? "Empty to delete" : "Delete"}
+          </Button>
           <ImageUrlDropzone onUrlDrop={(imageURL) => setControlnetImage(imageURL)} />
           <div className="d-flex justify-content-center gap-1 w-100">
             <Button onClick={onClick('portrait')} disabled={orientation === 'portrait'} color="primary" style={{ fontSize: '0.8em' }} className="w-50">P</Button>

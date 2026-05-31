@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { usePromptContext } from "./context";
-import { Template } from "./template";
+import { Template } from "./prompt-template";
 import { DndContext, closestCenter, DragEndEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { TemplateEditor } from "./template-editor";
 import { DiffusionConfiguration } from "./diffusion-configuration";

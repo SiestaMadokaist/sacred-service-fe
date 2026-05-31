@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { usePromptContext } from "./context";
 import CreatableSelect from "react-select/creatable";
 import { Button, Input, InputGroup, InputGroupText } from "reactstrap";
-import { IconCopy, IconTrash } from "@tabler/icons-react";
+import { IconTrash } from "@tabler/icons-react";
 
 export const TemplateSelector = (): JSX.Element => {
   const ctx = usePromptContext();

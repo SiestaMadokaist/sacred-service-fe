@@ -1,5 +1,5 @@
 import { IVariables } from "@/api/dto/variables";
-import { Memoizer } from "@/pkg/endfield/helper";
+import { Memoizer } from "@/pkg/endfield/memoizer";
 
 interface ITemplate {
   orientation: "landscape" | "portrait";

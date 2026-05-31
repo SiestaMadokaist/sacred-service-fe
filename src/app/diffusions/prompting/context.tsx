@@ -6,7 +6,7 @@ import { useApi } from "../../../hooks/useApi";
 import { SYSTEM_ENV } from "../../../helper/env";
 import useLocalStorage from "use-local-storage";
 import { IVariables } from "@/api/dto/variables";
-import { Controlnet, IRegionalPrompterArgs, Template, compilePrompt } from "./template";
+import { Controlnet, IRegionalPrompterArgs, Template, compilePrompt } from "./prompt-template";
 
 export type SamplingMethod =
   | 'Euler'
@@ -182,15 +182,15 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
     }
   }
   const pushQueue = async (ts: Template[]) => {
-    const prompts: Partial<IGenerate>[] = ts.map((x, index) => {
-      const { positive, negative } = x.compiled(variables);
-      const regPrompt = x.regionalPrompter();
-      const alwayson_scripts = buildAlwaysOnScripts(x.controlnet(), regPrompt);
-      const initialSeed = x.seed() ?? seed ?? -1;
+    const prompts: Partial<IGenerate>[] = ts.map((t, index) => {
+      const { positive, negative } = t.compiled(variables);
+      const regPrompt = t.regionalPrompter();
+      const alwayson_scripts = buildAlwaysOnScripts(t.controlnet(), regPrompt);
+      const initialSeed = t.seed() ?? seed ?? -1;
       const finalSubseed = initialSeed === -1 ? -1 : (subseed + index);
       return {
-        ...x.serialize(),
-        ...x.size(),
+        ...t.serialize(),
+        ...t.size(),
         prompt: positive,
         negative_prompt: `${negative}\n${negativePrompt}`,
         alwayson_scripts,
@@ -209,7 +209,13 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
       sampler_name: samplerName,
       seed: seed ?? Math.floor(Math.random() * 10_000_000),
     };
-    const actionId = compilePrompt(templateId, variables);
+    let actionId: string;
+    if (prompts.length == 1) {
+      let idx = templates.findIndex((t0) => t0 === ts[0]);
+      actionId = `${templateId}-${idx}`;
+    } else {
+      actionId = compilePrompt(templateId, variables);
+    }
     const params = {
       jobId: `${actionId}-${Date.now()}`,
       actionId,
