@@ -6,6 +6,7 @@ import { useApi } from "../../../hooks/useApi";
 import { SYSTEM_ENV } from "../../../helper/env";
 import useLocalStorage from "use-local-storage";
 import { IVariables } from "@/api/dto/variables";
+import { Controlnet, IRegionalPrompterArgs, Template, compilePrompt } from "./template";
 
 export type SamplingMethod =
   | 'Euler'
@@ -49,70 +50,36 @@ export const SAMPLING_SCHEDULES: SamplingSchedule[] = [
   'SGM Uniform'
 ];
 
-type RATIO = `${number}${string|","}${number}`
-interface IRegionalPrompterArgs {
-  args: [
-      true, // active
-      false, // debug
-      "Matrix" | "Mask" | "Prompt",
-      "Horizontal" | "Vertical" | "Columns" | "Rows",
-      "Mask" | null,
-      "Prompt" | "Prompt-Ex",
-      RATIO,
-      "", // base ratio,
-      false, // use base
-      true, // use common
-      boolean, // use neg-common
-      "Attention" | "Latent", // prefer Attention,
-      boolean, // change AND and BREAK
-      "0", // lora text encoder (?)
-      "0", // lora u-net
-      "0",  // threshold
-      "", // mask ?
-      // "0", // lora stop step
-      // "0", // lora hires stop step
-      // false // flip 
-  ]
+
+
+export interface IGenerate {
+  negative_prompt: string;
+  prompt: string;
+  height: 1200 | 1000;
+  width: 1000 | 1200;
+  sampler_name: "DPM++ 2M Karras";
+  seed: number;
+  steps: 20 | 25 | 30;
+  alwayson_scripts?: {
+    controlnet?: Controlnet;
+    "Regional Prompter"?: IRegionalPrompterArgs;
+  }
+
 }
 
-// interface IControlnet {
-//     model: "illustriousXLCanny_v10 [40f566e5]";
-//     module: "canny";
-//     source: string;
+// export interface IGenerateLandscape {
+//   negative_prompt: string;
+//   prompt: string;
+//   sampler_name: "DPM++ 2M Karras";
+//   seed: number;
+//   steps: 20 | 25 | 30;
+//   height: 1000;
+//   width: 1200;
+//   alwayson_scripts?: {
+//     controlnet?: ITemplate['controlnet'];
+//     "Regional Prompter"?: IRegionalPrompterArgs;
+//   }
 // }
-export interface IGeneratePortrait {
-  negative_prompt: string;
-  prompt: string;
-  sampler_name: "DPM++ 2M Karras";
-  seed: number;
-  steps: 20 | 25 | 30;
-  height: 1200;
-  width: 1000;
-  alwayson_scripts?: {
-    controlnet?: ITemplate['controlnet'];
-    "Regional Prompter"?: IRegionalPrompterArgs;
-  }
-
-}
-
-export interface IGenerateLandscape {
-  controlnet?: {
-    model: "illustriousXLCanny_v10 [40f566e5]";
-    module: "canny";
-    source: string;
-  }
-  negative_prompt: string;
-  prompt: string;
-  sampler_name: "DPM++ 2M Karras";
-  seed: number;
-  steps: 20 | 25 | 30;
-  height: 1000;
-  width: 1200;
-  alwayson_scripts?: {
-    controlnet?: ITemplate['controlnet'];
-    "Regional Prompter"?: IRegionalPrompterArgs;
-  }
-}
 
 
 interface IPromptingContext {
@@ -135,13 +102,12 @@ interface IPromptingContext {
   setSamplingSchedule: (schedule: SamplingSchedule) => void;
   setVariables: (variables: Record<string, string>) => void;
   getPrompts: () => string;
-  buildPrompt: (template: string) => string;
-  setTemplate: (index: number, template: ITemplate) => void;
-  addTemplate: (after: number, template: ITemplate) => void;
+  setTemplate: (index: number, template: Template) => void;
+  addTemplate: (after: number, template: Template) => void;
   deleteTemplate: (index: number) => void;
   reorderTemplates: (oldIndex: number, newIndex: number) => void;
-  templates: ITemplate[];
-  pushQueue: (ts: ITemplate[]) => Promise<void>;
+  templates: Template[];
+  pushQueue: (ts: Template[]) => Promise<void>;
   varCounts: Record<string, number>;
   collectionAPI: AxiosInstance;
   computeAPI: AxiosInstance;
@@ -158,13 +124,9 @@ interface IPromptProvider {
   children: ReactNode;
 }
 
-const negativePrompt = `lowres, worst aesthetic, bad quality, worst quality, bad anatomy, jpeg artifacts, scan artifacts, 
-lossy-lossless, unfinished, ugly, poorly drawn, greyscale, 
+const negativePrompt = `lowres, worst aesthetic, bad quality, worst quality, bad anatomy, jpeg artifacts, scan artifacts,
+lossy-lossless, unfinished, ugly, poorly drawn, greyscale,
 watermark, text, extra digits, extra finger, blood`;
-
-const isTag = (x: string) => {
-  return x.match(/^[\w _]+$/);
-}
 
 export function PromptProvider(props: IPromptProvider): JSX.Element {
   const [hub] = useState(apiHub());
@@ -176,7 +138,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
   const [variables, setVariables] = useState<Record<string, string>>({});
   const [varCounts, setVarCounts] = useState<Record<string, number>>({});
 
-  const [templates, _setTemplates] = useState<ITemplate[]>([]);
+  const [templates, _setTemplates] = useState<Template[]>([]);
   const [titles, setTitles] = useState<string[]>([]);
   const [templateId, setTemplateId] = useState<string>('');
   const [activeIndex, setActiveIndex] = useState<number>(0);
@@ -192,29 +154,20 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
     : `${samplingMethod} ${samplingSchedule}`;
 
   const setTitle = () => {
-    const tagLists = templates
-      .map((x) => x.prompt.split(/[,\n]+/).map((x) => x.trim()).filter(isTag))
-    const tagSets = tagLists.map((x) => new Set(x));
     const globalCount: Record<string, number> = {};
-    tagSets.forEach((tagSet) => {
-      tagSet.forEach((tag) => {
+    for (const template of templates) {
+      template.tags().forEach((tag) => {
         globalCount[tag] = (globalCount[tag] ?? 0) + 1;
       });
-    });
-    const newTitles: string[] = [];
-    for (let i = 0; i < templates.length; i++) {
-      const tags = Array.from(tagSets[i]);
-      tags.sort((a, b) => (globalCount[a] ?? 0) - (globalCount[b] ?? 0));
-      newTitles.push(tags.slice(0, 7).join(', '));
     }
-    setTitles(newTitles)
+    setTitles(templates.map((template) => template.title(globalCount)));
   }
 
   useEffect(() => {
     setTitle();
   }, [templates]);
 
-  const buildAlwaysOnScripts = (controlnet?: ITemplate['controlnet'], regPrompt?: IRegionalPrompterArgs): undefined | { controlnet?: ITemplate['controlnet'], "Regional Prompter"?: IRegionalPrompterArgs } => {
+  const buildAlwaysOnScripts = (controlnet?: Controlnet, regPrompt?: IRegionalPrompterArgs): undefined | { controlnet?: Controlnet, "Regional Prompter"?: IRegionalPrompterArgs } => {
     if (controlnet && regPrompt) {
       return {
         controlnet, 
@@ -228,17 +181,17 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
       return undefined;
     }
   }
-  const pushQueue = async (ts: ITemplate[]) => {
-    const prompts: Partial<IGeneratePortrait>[] = ts.map((x, index) => {
-      const prompt = buildPrompt(x.prompt);
-      const negative = buildPrompt(x.prompt, { negative: true });
-      const regPrompt = buildRegPrompt(x.prompt);
-      const alwayson_scripts = buildAlwaysOnScripts(x.controlnet, regPrompt);
-      const initialSeed = x.seed ?? seed ?? -1;
+  const pushQueue = async (ts: Template[]) => {
+    const prompts: Partial<IGenerate>[] = ts.map((x, index) => {
+      const { positive, negative } = x.compiled(variables);
+      const regPrompt = x.regionalPrompter();
+      const alwayson_scripts = buildAlwaysOnScripts(x.controlnet(), regPrompt);
+      const initialSeed = x.seed() ?? seed ?? -1;
       const finalSubseed = initialSeed === -1 ? -1 : (subseed + index);
       return {
-        ...x,
-        prompt,
+        ...x.serialize(),
+        ...x.size(),
+        prompt: positive,
         negative_prompt: `${negative}\n${negativePrompt}`,
         alwayson_scripts,
         n_iter: nIter,
@@ -256,7 +209,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
       sampler_name: samplerName,
       seed: seed ?? Math.floor(Math.random() * 10_000_000),
     };
-    const actionId = buildPrompt(templateId);
+    const actionId = compilePrompt(templateId, variables);
     const params = {
       jobId: `${actionId}-${Date.now()}`,
       actionId,
@@ -276,14 +229,14 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
     return tplVars;
   };
 
-  const setTemplates = (newTemplates: ITemplate[]) => {
+  const setTemplates = (newTemplates: Template[]) => {
     _setTemplates(newTemplates);
     const vars = updateVariables(newTemplates);
     const localVarCounts: Record<string, number> = {}
     for (const template of newTemplates) {
       const varKeys = Object.keys(vars);
       for (const v of varKeys) {
-        if (template.prompt.includes(`{${v}}`)) {
+        if (template.source().includes(`{${v}}`)) {
           localVarCounts[v] = (localVarCounts[v] ?? 0) + 1;
         }
       }
@@ -291,8 +244,8 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
     setVarCounts(localVarCounts);
   }
 
-  const updateVariables = (templates: ITemplate[]): Record<string, string> => {
-    const tplVars = detectVariables(templates.map((x) => x.prompt).join('\n'));
+  const updateVariables = (templates: Template[]): Record<string, string> => {
+    const tplVars = detectVariables(templates.map((x) => x.source()).join('\n'));
     const oldVars = variables;
     const newVars: Record<string, string> = {};
     const sortedKeys = Object.keys(tplVars).sort((a, b) => a.localeCompare(b));
@@ -303,7 +256,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
     return newVars;
   }
 
-  const addTemplate = (after: number, template: ITemplate) => {
+  const addTemplate = (after: number, template: Template) => {
     if (after === templates.length) {
       setTemplates([...templates, template]);
       return;
@@ -313,7 +266,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
     setTemplates(newTemplates);
   }
 
-  const setTemplate = (index: number, template: ITemplate) => {
+  const setTemplate = (index: number, template: Template) => {
     if (index === templates.length) {
       setTemplates([...templates, template]);
       return;
@@ -352,89 +305,20 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
         return;
       }
       const promptPath = `${PROMPT_PREFIX}/${templateId}`;
-      const resp = await axios.get<{ templateId: string, templates: ITemplate[], variables: Record<string, string> }>(promptPath);
+      const resp = await axios.get<{ templateId: string, templates: unknown[], variables: Record<string, string> }>(promptPath);
       const { data } = resp
       const vars = data.variables ?? {};
-      const templates = data.templates as ITemplate[];
+      const templates = (data.templates ?? []).map((t) => Template.deserialize(t));
       _setTemplates(templates);
       setVariables(vars);
     }
     action();
   }, [templateId])
 
-  const buildPrompt = (template: string, args: { negative: boolean } = { negative: false }): string => {
-    const [tPos, tNeg, _regPrompt] = template.split('---');
-    const t0 = args?.negative ? (tNeg ?? '') : tPos;
-    const t = t0.split('\n').filter((x) => x.trim().startsWith('#') === false).join('\n');
-    const prompts = t.replace(/<(.*?)>/g, (_, p1) => {
-      const key = p1.trim();
-      const value = variables[key];
-      const name = value ?? `<${key}>`;
-      return name.split(',').map((v) => v.trim())[0];
-    }).replace(/{(.*?)}/g, (_, p1) => {
-      const key = p1.trim();
-      const value = variables[key];
-      return value ? `(( ${value} ))` : `{${key}}`;
-    });
-    // split by comma or newline, trim spaces, to lower case, remove duplicates
-    const lines = prompts.split('\n')
-    const tagLines = lines.map(line => line.split(',').map((tag) => tag.trim()).filter(tag => tag.length > 0))
-    const tagset = new Set<string>()
-    const simplified: string[] = []
-    const exceptions = ['addcol', 'addrow', 'addcomm'];
-    for (const tags of tagLines) {
-      for (const tag of tags) {
-        const tl = tag.toLowerCase();
-        if (exceptions.includes(tl)) {
-          simplified.push(tag);
-        } else if (!tagset.has(tl)) {
-          tagset.add(tl);
-          simplified.push(tag);
-        }
-      }
-      simplified.push('\n');
-    }
-    const joined = simplified.join(', ').replaceAll(`\n, `, '\n').replaceAll(/,\s*\n/g, '\n').trim();
-    return joined;
-  }
-
-  const buildRegPrompt = (template: string): IRegionalPrompterArgs | undefined => {
-    const [_tPos, _tNeg, regPrompt] = template.split('---');
-    if (!regPrompt) { return undefined; }
-    if (regPrompt === '') { return undefined; }
-    // sample format: (r|c):1,1;1,1
-    const [orientation, ratio] = regPrompt.split(':').map((x) => x.trim())
-    const [selectedOrientation] = ["Horizontal", "Vertical", "Rows", "Columns"]
-      .filter((x) => x[0].toLowerCase() === orientation[0].toLowerCase()) as ["Horizontal"];
-    const args: IRegionalPrompterArgs['args'] = [
-      true, // active
-      false, // debug
-      "Matrix",
-      selectedOrientation,
-      null, // mask
-      "Prompt", // prompt
-      ratio as "1,1", // ratio
-      "", // base ratio
-      false, // use base
-      true, // use common
-      false, // use neg-common
-      "Attention", // prefer Attention
-      true, // change AND and BREAK
-      "0", // lora text encoder (?)
-      "0", // lora u-net
-      "0",  // threshold
-      "0" as '', // mask ?
-      // "0", // lora stop step
-      // "0", // lora hires stop step
-      // false // flip
-    ]
-    return { args };
-  }
-
   const [showHub, _] = useState<ShowHub>(initShowHub());
   const [seed, setSeed] = useState<number>(-1);
   const getPrompts = (): string => {
-    return templates.map((x) => x.prompt).map((x) => buildPrompt(x)).join('\n\n');
+    return templates.map((x) => x.compiled(variables).positive).join('\n\n');
   }
   return (
     <PromptContext.Provider value={{
@@ -468,7 +352,6 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
       setTemplateId,
       setVariables,
       getPrompts,
-      buildPrompt,
       promptAPI,
       computeAPI,
       collectionAPI,

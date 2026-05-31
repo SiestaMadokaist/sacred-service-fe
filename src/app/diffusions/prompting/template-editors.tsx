@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ITemplate, usePromptContext } from "./context";
+import { usePromptContext } from "./context";
+import { Template } from "./template";
 import { DndContext, closestCenter, DragEndEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { TemplateEditor } from "./template-editor";
 import { DiffusionConfiguration } from "./diffusion-configuration";
@@ -9,7 +10,7 @@ import { CSS } from '@dnd-kit/utilities';
 interface SortableTemplateEditorProps {
   id: string;
   index: number;
-  template: ITemplate;
+  template: Template;
   minimized: boolean;
 }
 

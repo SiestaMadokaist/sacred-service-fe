@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react"
-import { ITemplate, usePromptContext } from "./context";
+import { usePromptContext } from "./context";
+import { Template } from "./template";
 import { Button, Col, Input, Label, Row } from "reactstrap";
 import { useDebounce } from "use-debounce";
 import { ImageUrlDropzone } from "../../../components/DragNDrop/ImageURLDropzone";
@@ -11,7 +12,7 @@ import { AutocompleteTextarea } from "../../../components/autocomplete";
 
 export interface ITemplateEditor {
   index: number;
-  template: ITemplate;
+  template: Template;
 }
 
 export interface ISinglePrompt {
@@ -38,15 +39,15 @@ const PromptViewer = (props: ISinglePrompt): JSX.Element => {
 
 export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
   const ctx = usePromptContext();
-  const [localTemplate, setLocalTemplate] = useState<string>(props.template.prompt);
+  const [localTemplate, setLocalTemplate] = useState<string>(props.template.source());
   const [debouncedTemplate] = useDebounce(localTemplate, 1000);
-  const [orientation, setOrientation] = useState<'portrait' | 'landscape'>(props.template.orientation ?? 'portrait');
+  const [orientation, setOrientation] = useState<'portrait' | 'landscape'>(props.template.orientation());
   const [valid, setValid] = useState(true);
   const [controlnetImage, setControlnetImage] = useState<string | undefined>();
   const [aiLoading, setAiLoading] = useState(false);
 
   const normalizeTaskRepeat = (v: number | undefined) => (v === undefined || v === -1 ? 1 : v);
-  const [taskRepeat, setTaskRepeat] = useState<number>(normalizeTaskRepeat(props.template.taskRepeat));
+  const [taskRepeat, setTaskRepeat] = useState<number>(normalizeTaskRepeat(props.template.taskRepeat()));
 
   const [openAIKey] = useLocalStorage("openai_api", "");
   const [selectedModel] = useLocalStorage("openai_model", "gpt-4o-mini");
@@ -54,7 +55,7 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
   const [customParamsText] = useLocalStorage("openai_custom_params", "{}");
 
   useEffect(() => {
-    setOrientation(props.template.orientation ?? 'portrait');
+    setOrientation(props.template.orientation());
   }, [ctx.templateId])
 
   const onSave = () => {
@@ -66,7 +67,7 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
     }
     promptAPI.post(`/`, {
       templateId,
-      templates: ctx.templates.filter((x) => x.prompt.length > 0),
+      templates: ctx.templates.filter((x) => x.source().length > 0).map((x) => x.serialize()),
       variables: ctx.variables,
     });
   }
@@ -107,10 +108,10 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
   }
 
   useEffect(() => {
-    setLocalTemplate(props.template.prompt);
-    setOrientation(props.template.orientation ?? 'portrait');
-    setControlnetImage(props.template.controlnet?.source);
-    setTaskRepeat(normalizeTaskRepeat(props.template.taskRepeat ?? 1));
+    setLocalTemplate(props.template.source());
+    setOrientation(props.template.orientation());
+    setControlnetImage(props.template.controlnet()?.source);
+    setTaskRepeat(normalizeTaskRepeat(props.template.taskRepeat()));
   }, [props.template])
 
   const validateTemplate = (template: string) => {
@@ -149,44 +150,26 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
       updatedTemplate = updatedTemplate.replace(regex, `{${leakingKey}}\n`);
     }
     setValid(true);
-    ctx.setTemplate(props.index, { prompt: updatedTemplate, ...resolution(), orientation, taskRepeat: taskRepeat });
+    ctx.setTemplate(props.index, props.template.update({ prompt: updatedTemplate, orientation, taskRepeat }));
   }, [debouncedTemplate])
 
   const addTemplate = () => {
-    const newTemplate: ITemplate = {
-      prompt: localTemplate,
-      orientation,
-      ...resolution(),
-      taskRepeat: taskRepeat,
-    }
-    ctx.addTemplate(props.index + 1, newTemplate);
-  }
-
-  const resolution = ($o?: (typeof orientation)) => {
-    const o = $o ?? orientation;
-    if (o === 'landscape') {
-      return { width: 1200, height: 1000 };
-    } else if (o === 'portrait') {
-      return { width: 1000, height: 1200 };
-    }
-    return { width: 1000, height: 1200 };
+    ctx.addTemplate(props.index + 1, props.template.update({ prompt: localTemplate, orientation, taskRepeat }));
   }
 
   const pushQueue = async () => {
-    const ref = ctx.templates[props.index];
-    const updated: ITemplate = {
-      ...ref,
+    const updated = ctx.templates[props.index].update({
       prompt: `(experimental):(0.001)\n${localTemplate}`,
-      taskRepeat: taskRepeat,
-    }
-    const prompts: ITemplate[] = [...new Array(taskRepeat)].map(() => updated);
+      taskRepeat,
+    });
+    const prompts: Template[] = [...new Array(taskRepeat)].map(() => updated);
     await ctx.pushQueue(prompts);
   }
 
   const onClick = (o: typeof orientation) => {
     return (e: React.MouseEvent) => {
       setOrientation(o);
-      ctx.setTemplate(props.index, { ...ctx.templates[props.index], orientation: o, ...resolution(o) });
+      ctx.setTemplate(props.index, ctx.templates[props.index].update({ orientation: o }));
     }
   }
 
@@ -203,8 +186,9 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
         dangerouslyAllowBrowser: true
       });
 
-      // const builtPrompt = ctx.buildPrompt(localTemplate);
-      const tags: Set<string> = new Set(localTemplate.split(/[,\n]/).map(t => t.trim()).filter(t => t.length > 0));
+      // send only the positive section (variables intact, not compiled)
+      const positive = props.template.update({ prompt: localTemplate }).gptUserPrompt();
+      const tags: Set<string> = new Set(positive.split(/[,\n]/).map(t => t.trim()).filter(t => t.length > 0));
       const completion = await client.chat.completions.create({
         model: selectedModel,
         messages: [
@@ -214,7 +198,7 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
           },
           {
             role: "user",
-            content: localTemplate,
+            content: positive,
           }
         ],
         ...JSON.parse(customParamsText || "{}")
@@ -226,7 +210,7 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
       const cleanedResponse = `${response}\n\n#Removed Tags:\n${removedTags.join(', ')}`;
       console.log({ tags, responseTags, removedTags, cleanedResponse });
       setLocalTemplate(cleanedResponse);
-      ctx.setTemplate(props.index, { ...ctx.templates[props.index], prompt: cleanedResponse });
+      ctx.setTemplate(props.index, ctx.templates[props.index].update({ prompt: cleanedResponse }));
     } catch (err: any) {
       ctx.showToast({ title: 'AI Error', message: err.message || 'Failed to enhance prompt', level: 'danger', show: true });
     } finally {
@@ -255,7 +239,7 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
               onChange={(e) => {
                 const val = normalizeTaskRepeat(e.target.value === '' ? undefined : parseInt(e.target.value, 10));
                 setTaskRepeat(val);
-                ctx.setTemplate(props.index, { ...ctx.templates[props.index], taskRepeat: val });
+                ctx.setTemplate(props.index, ctx.templates[props.index].update({ taskRepeat: val }));
               }}
             />
             <Button onClick={pushQueue} style={{ color: 'yellow', width: '65%' }} color="success">Queue Single</Button>
@@ -281,7 +265,7 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
           <div>{templateHash}</div>
         </div>
         <pre>
-          <PromptViewer prompt={ctx.buildPrompt(localTemplate)} />
+          <PromptViewer prompt={props.template.update({ prompt: localTemplate }).compiled(ctx.variables).positive} />
         </pre>
       </Col>
     </Row>

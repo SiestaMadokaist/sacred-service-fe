@@ -21,7 +21,7 @@ function InnerPage(): JSX.Element {
     const handleBeforeUnload = async (event: BeforeUnloadEvent) => {
       await ctx.promptAPI.post(`/`, {
         templateId: ctx.templateId,
-        templates: ctx.templates.filter((x) => x.prompt.length > 0),
+        templates: ctx.templates.filter((x) => x.source().length > 0).map((x) => x.serialize()),
         variables: ctx.variables,
       });
       event.preventDefault();

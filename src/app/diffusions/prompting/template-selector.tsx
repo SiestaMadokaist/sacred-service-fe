@@ -39,7 +39,7 @@ export const TemplateSelector = (): JSX.Element => {
     }
     await promptAPI.post(`/`, {
       templateId,
-      templates: ctx.templates.filter((x) => x.prompt.length > 0),
+      templates: ctx.templates.filter((x) => x.source().length > 0).map((x) => x.serialize()),
       variables: ctx.variables,
     });
     showToast({ title: 'Save Success', message: 'Template Saved', level: 'success', show: true });

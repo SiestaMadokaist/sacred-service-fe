@@ -58,7 +58,7 @@ export const DiffusionConfiguration = (): JSX.Element => {
           />
         </div>
         <div className="w-18">
-          <Button onClick={() => ctx.pushQueue(ctx.templates.slice(start - 1, stop).flatMap((t) => [...new Array(t.taskRepeat ?? 1)].map(() => t)))} color="warning" style={{ width: '100%' }}>Queue</Button>
+          <Button onClick={() => ctx.pushQueue(ctx.templates.slice(start - 1, stop).flatMap((t) => [...new Array(t.taskRepeat())].map(() => t)))} color="warning" style={{ width: '100%' }}>Queue</Button>
         </div>
       </div>
     </div>

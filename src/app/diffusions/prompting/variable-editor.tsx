@@ -38,9 +38,8 @@ const VariableEditor = (props: IVariableEditor): JSX.Element => {
   const autoInsert = (key: string) => {
     const index = ctx.activeIndex;
     const template0 = ctx.templates[index];
-    const template1 = template0.prompt.replaceAll(`{${key}}`, '');
-    const newTemplate = `${template1}{${key}}`;
-    ctx.setTemplate(index, { prompt: newTemplate, taskRepeat: template0.taskRepeat ?? 1 });
+    const newPrompt = `${template0.source().replaceAll(`{${key}}`, '')}{${key}}`;
+    ctx.setTemplate(index, template0.update({ prompt: newPrompt }));
   }
 
   const [showPreview, setShowPreview] = useState(false);
