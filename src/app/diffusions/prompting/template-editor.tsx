@@ -45,8 +45,8 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
   const [controlnetImage, setControlnetImage] = useState<string | undefined>();
   const [aiLoading, setAiLoading] = useState(false);
 
-  const normalizeNIter = (v: number | undefined) => (v === undefined || v === -1 ? undefined : v);
-  const [localNIter, setLocalNIter] = useState<number | undefined>(normalizeNIter(props.template.nIter ?? -1));
+  const normalizeTaskRepeat = (v: number | undefined) => (v === undefined || v === -1 ? 1 : v);
+  const [taskRepeat, setTaskRepeat] = useState<number>(normalizeTaskRepeat(props.template.taskRepeat));
 
   const [openAIKey] = useLocalStorage("openai_api", "");
   const [selectedModel] = useLocalStorage("openai_model", "gpt-4o-mini");
@@ -110,7 +110,7 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
     setLocalTemplate(props.template.prompt);
     setOrientation(props.template.orientation ?? 'portrait');
     setControlnetImage(props.template.controlnet?.source);
-    setLocalNIter(normalizeNIter(props.template.nIter));
+    setTaskRepeat(normalizeTaskRepeat(props.template.taskRepeat ?? 1));
   }, [props.template])
 
   const validateTemplate = (template: string) => {
@@ -149,7 +149,7 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
       updatedTemplate = updatedTemplate.replace(regex, `{${leakingKey}}\n`);
     }
     setValid(true);
-    ctx.setTemplate(props.index, { prompt: updatedTemplate, ...resolution(), orientation, });
+    ctx.setTemplate(props.index, { prompt: updatedTemplate, ...resolution(), orientation, taskRepeat: taskRepeat });
   }, [debouncedTemplate])
 
   const addTemplate = () => {
@@ -157,6 +157,7 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
       prompt: localTemplate,
       orientation,
       ...resolution(),
+      taskRepeat: taskRepeat,
     }
     ctx.addTemplate(props.index + 1, newTemplate);
   }
@@ -176,9 +177,9 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
     const updated: ITemplate = {
       ...ref,
       prompt: `(experimental):(0.001)\n${localTemplate}`,
-      nIter: 1
+      taskRepeat: taskRepeat,
     }
-    const prompts: ITemplate[] = [...new Array(ctx.nIter)].map((x) => (updated))
+    const prompts: ITemplate[] = [...new Array(taskRepeat)].map(() => updated);
     await ctx.pushQueue(prompts);
   }
 
@@ -248,18 +249,16 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
           <div className="d-flex w-100 mt-2 gap-2">
             <Input
               type="number"
-              min={-1}
-              value={localNIter ?? ''}
-              placeholder={String(ctx.nIter)}
-              style={{ width: '20%' }}
+              min={0}
+              value={taskRepeat}
+              style={{ width: '15%' }}
               onChange={(e) => {
-                const parsed = e.target.value === '' ? undefined : parseInt(e.target.value, 10);
-                const val = normalizeNIter(parsed);
-                setLocalNIter(val);
-                ctx.setTemplate(props.index, { ...ctx.templates[props.index], nIter: val });
+                const val = normalizeTaskRepeat(e.target.value === '' ? undefined : parseInt(e.target.value, 10));
+                setTaskRepeat(val);
+                ctx.setTemplate(props.index, { ...ctx.templates[props.index], taskRepeat: val });
               }}
             />
-            <Button onClick={pushQueue} style={{ color: 'yellow', width: '60%' }} color="success">Queue Single</Button>
+            <Button onClick={pushQueue} style={{ color: 'yellow', width: '65%' }} color="success">Queue Single</Button>
             <Button onClick={enhanceWithAI} disabled={aiLoading} style={{ width: '20%' }} color="primary">
               {aiLoading ? "..." : "AI"}
             </Button>
@@ -267,12 +266,12 @@ export const TemplateEditor = (props: ITemplateEditor): JSX.Element => {
         </AutocompleteTextarea>
       </Col>
       <Col sm="2" className="d-flex justify-content-center align-items-start">
-        <div className="d-flex flex-column align-items-center gap-2" style={{ paddingTop: '0.5rem' }}>
+        <div className="d-flex flex-column align-items-center gap-2 w-100" style={{ paddingTop: '0.5rem' }}>
           <HoldToDelete onDelete={() => ctx.deleteTemplate(props.index)} />
           <ImageUrlDropzone onUrlDrop={(imageURL) => setControlnetImage(imageURL)} />
-          <div className="d-flex justify-content-center gap-1">
-            <Button onClick={onClick('portrait')} disabled={orientation === 'portrait'} color="primary" style={{ fontSize: '0.8em' }} className="w-40">P</Button>
-            <Button onClick={onClick('landscape')} disabled={orientation === 'landscape'} color="primary" style={{ fontSize: '0.8em' }} className="w-40">L</Button>
+          <div className="d-flex justify-content-center gap-1 w-100">
+            <Button onClick={onClick('portrait')} disabled={orientation === 'portrait'} color="primary" style={{ fontSize: '0.8em' }} className="w-50">P</Button>
+            <Button onClick={onClick('landscape')} disabled={orientation === 'landscape'} color="primary" style={{ fontSize: '0.8em' }} className="w-50">L</Button>
           </div>
         </div>
       </Col>

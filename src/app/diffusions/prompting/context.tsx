@@ -114,21 +114,6 @@ export interface IGenerateLandscape {
   }
 }
 
-export interface ITemplate {
-  orientation?: "landscape" | "portrait";
-  prompt: string;
-  nIter?: number;
-  seed?: number;
-  controlnet?: {
-    source: string;
-    module: "canny";
-    model: "canny-il [a74daa41]",
-  }
-  size?: {
-    width: number;
-    height: number;
-  }
-}
 
 interface IPromptingContext {
   variables: IVariables;
@@ -179,13 +164,6 @@ watermark, text, extra digits, extra finger, blood`;
 
 const isTag = (x: string) => {
   return x.match(/^[\w _]+$/);
-}
-const tagCount = (set: Set<string>): Record<string, string> => {
-  const result: Record<string, string> = {};
-  for (const s of set.values()) {
-    result[s] = (result[s] ?? 0) + 1
-  }
-  return result;
 }
 
 export function PromptProvider(props: IPromptProvider): JSX.Element {
@@ -263,7 +241,7 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
         prompt,
         negative_prompt: `${negative}\n${negativePrompt}`,
         alwayson_scripts,
-        n_iter: x.nIter ?? nIter,
+        n_iter: nIter,
         seed: initialSeed,
         subseed: finalSubseed === -1 ? undefined : finalSubseed,
       };
@@ -424,11 +402,10 @@ export function PromptProvider(props: IPromptProvider): JSX.Element {
     const [_tPos, _tNeg, regPrompt] = template.split('---');
     if (!regPrompt) { return undefined; }
     if (regPrompt === '') { return undefined; }
-    // sample format: (H|V|R|C):1,1;1,1
+    // sample format: (r|c):1,1;1,1
     const [orientation, ratio] = regPrompt.split(':').map((x) => x.trim())
     const [selectedOrientation] = ["Horizontal", "Vertical", "Rows", "Columns"]
       .filter((x) => x[0].toLowerCase() === orientation[0].toLowerCase()) as ["Horizontal"];
-    console.log({ orientation, ratio, selectedOrientation })
     const args: IRegionalPrompterArgs['args'] = [
       true, // active
       false, // debug

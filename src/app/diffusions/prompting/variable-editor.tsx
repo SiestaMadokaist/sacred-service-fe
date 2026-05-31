@@ -40,7 +40,7 @@ const VariableEditor = (props: IVariableEditor): JSX.Element => {
     const template0 = ctx.templates[index];
     const template1 = template0.prompt.replaceAll(`{${key}}`, '');
     const newTemplate = `${template1}{${key}}`;
-    ctx.setTemplate(index, { prompt: newTemplate });
+    ctx.setTemplate(index, { prompt: newTemplate, taskRepeat: template0.taskRepeat ?? 1 });
   }
 
   const [showPreview, setShowPreview] = useState(false);
